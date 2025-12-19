@@ -1,0 +1,122 @@
+.not-found-page {
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-gray);
+  padding: 2rem;
+}
+
+.not-found-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.not-found-content {
+  text-align: left;
+}
+
+.not-found-code {
+  font-size: 7rem;
+  font-weight: 800;
+  color: var(--primary-blue);
+  margin: 0;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+}
+
+.not-found-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 2rem 0 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.not-found-description {
+  font-size: 1.0625rem;
+  color: var(--text-secondary);
+  margin-bottom: 2.5rem;
+  line-height: 1.7;
+  max-width: 480px;
+}
+
+.not-found-button {
+  display: inline-block;
+  padding: 1rem 2.5rem;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: var(--white);
+  background-color: var(--primary-blue);
+  border-radius: 10px;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.not-found-button:hover {
+  background-color: var(--primary-blue-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.not-found-illustration {
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+  color: var(--primary-blue);
+  opacity: 0.15;
+}
+
+.not-found-illustration svg {
+  width: 100%;
+  height: auto;
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .not-found-container {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+    text-align: center;
+  }
+
+  .not-found-content {
+    text-align: center;
+  }
+
+  .not-found-code {
+    font-size: 5rem;
+  }
+
+  .not-found-title {
+    font-size: 1.75rem;
+  }
+
+  .not-found-description {
+    font-size: 1rem;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .not-found-page {
+    padding: 1rem;
+  }
+
+  .not-found-code {
+    font-size: 4rem;
+  }
+
+  .not-found-title {
+    font-size: 1.5rem;
+  }
+
+  .not-found-button {
+    width: 100%;
+  }
+}
+
