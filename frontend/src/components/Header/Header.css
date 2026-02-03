@@ -218,3 +218,70 @@
     padding: 0.875rem 1rem;
   }
 }
+
+.header-logout-button {
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.3s;
+  }
+  
+  .header-logout-button:hover {
+    color: #2563eb;
+  }
+  
+  .mobile-menu-logout {
+    display: block;
+    width: 100%;
+    padding: 1rem 2rem;
+    text-align: left;
+    background: none;
+    border: none;
+    color: #1f2937;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .mobile-menu-logout:hover {
+    background-color: #f3f4f6;
+  }
+  
+  .mobile-menu-logout:active {
+    background-color: #e5e7eb;
+  }
+
+/* Cart icon styling */
+.header-cart svg {
+    width: 24px;  /* ← Make it smaller */
+    height: 24px;
+    stroke-width: 2;
+  }
+  
+  .header-cart {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .cart-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.7rem;  /* ← Smaller badge */
+    font-weight: 700;
+    padding: 0.125rem 0.375rem;
+    border-radius: 10px;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }

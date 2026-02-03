@@ -1,264 +1,265 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { productsApi } from '../../api/products';
+import type { Product, CategoriesResponse } from '../../api/products';
 import ProductCard from '../../components/ProductCard/ProductCard';
-import { getUniqueBrands, getModelsByBrand, findArticlePrefix } from '../../mockup/catalogData';
-import { filterProductsByArticlePrefix, getUniqueCategories, productsData } from '../../mockup/productsData';
-import type { Product } from '../../mockup/productsData';
 import './CatalogPage.css';
 
-const CatalogPage = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const categoryFromUrl = searchParams.get('category') || '';
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedBrand, setSelectedBrand] = useState('');
-  const [selectedModelYear, setSelectedModelYear] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl);
-  const [selectedSort, setSelectedSort] = useState('');
+export default function CatalogPage() {
+  const [categories, setCategories] = useState<CategoriesResponse | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Filter state
+  const [selectedMarka, setSelectedMarka] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<string>('');
+  const [selectedGeneration, setSelectedGeneration] = useState<string>('');
   
-  const brands = getUniqueBrands();
-  const modelYears = selectedBrand ? getModelsByBrand(selectedBrand) : [];
-  const categories = getUniqueCategories();
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const limit = 20;
 
-  const handleSearch = () => {
-    let filteredProducts: Product[] = [];
+  const [searchParams] = useSearchParams();
+  const nameKeyword = searchParams.get('nameKeyword') || '';
+  const navigate = useNavigate();
 
-    // Search by article if search query exists
-    if (searchQuery.trim()) {
-      const query = searchQuery.trim().toLowerCase();
-      filteredProducts = productsData.filter(product => 
-        product.article.toLowerCase().includes(query) ||
-        product.name.toLowerCase().includes(query) ||
-        product.brand.toLowerCase().includes(query) ||
-        product.model.toLowerCase().includes(query)
-      );
+  // Load categories on mount
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  // Load products when filters or page change
+  useEffect(() => {
+    loadProducts();
+  }, [selectedMarka, selectedModel, selectedGeneration, currentPage, nameKeyword]);
+
+  const loadCategories = async () => {
+    try {
+      const data = await productsApi.getCategories();
+      setCategories(data);
+    } catch (err) {
+      console.error('Failed to load categories:', err);
+      setError('Не удалось загрузить категории');
     }
-    // Filter by category only (brand is now optional)
-    else if (selectedCategory && !selectedBrand) {
-      filteredProducts = productsData.filter(p => p.category === selectedCategory);
-    }
-    // Use brand/model/year filters
-    else if (selectedBrand && selectedModelYear) {
-      const [modelCode, yearCode] = selectedModelYear.split('|');
-      const articlePrefix = findArticlePrefix(selectedBrand, modelCode, yearCode);
-      
-      if (articlePrefix) {
-        filteredProducts = filterProductsByArticlePrefix(articlePrefix);
-      }
-      
-      // Apply category filter if both brand and category are selected
-      if (selectedCategory) {
-        filteredProducts = filteredProducts.filter(p => p.category === selectedCategory);
-      }
-    }
-    
-    // Apply sorting
-    if (selectedSort === 'price_asc') {
-      filteredProducts.sort((a, b) => a.price - b.price);
-    } else if (selectedSort === 'price_desc') {
-      filteredProducts.sort((a, b) => b.price - a.price);
-    } else if (selectedSort === 'name') {
-      filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-    }
-    
-    setProducts(filteredProducts);
   };
 
-  // Update selected category when URL changes
-  useEffect(() => {
-    const categoryParam = searchParams.get('category');
-    if (categoryParam && categoryParam !== selectedCategory) {
-      setSelectedCategory(categoryParam);
+  const loadProducts = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await productsApi.searchProducts({
+        marka: selectedMarka || undefined,
+        model: selectedModel || undefined,
+        generation: selectedGeneration || undefined,
+        nameKeyword: nameKeyword || undefined,
+        page: currentPage,
+        limit,
+      });
+      
+      setProducts(response.items);
+      setTotal(response.total);
+      setTotalPages(response.pages);
+    } catch (err) {
+      console.error('Failed to load products:', err);
+      setError('Не удалось загрузить товары');
+    } finally {
+      setLoading(false);
     }
-  }, [searchParams]);
+  };
 
-  // Auto-search when filters change or search query changes
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      handleSearch();
-    } else if (selectedCategory && !selectedBrand) {
-      // Category only filter
-      handleSearch();
-    } else if (selectedBrand && selectedModelYear) {
-      handleSearch();
-    } else {
-      setProducts([]);
-    }
-  }, [searchQuery, selectedBrand, selectedModelYear, selectedCategory, selectedSort]);
+  // Handle brand selection
+  const handleMarkaChange = (marka: string) => {
+    setSelectedMarka(marka);
+    setSelectedModel(''); // Reset model
+    setSelectedGeneration(''); // Reset generation
+    setCurrentPage(1); // Reset to first page
+  };
 
+  // Handle model selection
+  const handleModelChange = (model: string) => {
+    setSelectedModel(model);
+    setSelectedGeneration(''); // Reset generation
+    setCurrentPage(1);
+  };
+
+  // Handle generation selection
+  const handleGenerationChange = (generation: string) => {
+    setSelectedGeneration(generation);
+    setCurrentPage(1);
+  };
+
+  // Reset all filters
   const resetFilters = () => {
-    setSearchQuery('');
-    setSelectedBrand('');
-    setSelectedModelYear('');
-    setSelectedCategory('');
-    setSelectedSort('');
-    setProducts([]);
-    setSearchParams({});
+    setSelectedMarka('');
+    setSelectedModel('');
+    setSelectedGeneration('');
+    setCurrentPage(1);
+    navigate('/catalog', { replace: true });
   };
 
-  const handleClearSearch = () => {
-    setSearchQuery('');
-  };
+  // Get available models for selected brand
+  const availableModels = selectedMarka && categories 
+    ? categories.modelsByBrand[selectedMarka] || []
+    : [];
+
+  // Get available generations for selected brand-model
+  const availableGenerations = selectedMarka && selectedModel && categories
+    ? categories.generationsByModel[`${selectedMarka}-${selectedModel}`] || []
+    : [];
+
+  if (error) {
+    return (
+      <div className="catalog-page">
+        <div className="catalog-error">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="catalog-page">
-      <div className="catalog-container">
         <div className="catalog-header">
-          <h1 className="catalog-title">Каталог запчастей</h1>
-          <p className="catalog-subtitle">
-            Найдите запчасти по артикулу или выберите марку и модель автомобиля
-          </p>
-        </div>
-
-        {/* Search by Article */}
-        <div className="catalog-search-card">
-          <div className="search-input-wrapper">
-            <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
-            </svg>
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Поиск по артикулу или названию (например: SDOCT05-880)"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
-              <button type="button" className="search-clear-btn" onClick={handleClearSearch}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6 6 18M6 6l12 12"/>
-                </svg>
-              </button>
+            <h1>Каталог запчастей</h1>
+            {nameKeyword && (
+                <div className="catalog-search-info">
+                <p>
+                    Поиск: <strong>{nameKeyword}</strong>
+                </p>
+                <button className="clear-search-btn" onClick={resetFilters}>
+                    ✕ Очистить поиск
+                </button>
+                </div>
             )}
-          </div>
+            <p className="catalog-subtitle">
+                Найдено товаров: <strong>{total}</strong>
+            </p>
         </div>
 
-        <div className="catalog-divider">
-          <span>или</span>
+      {/* Filters */}
+      <div className="catalog-filters">
+        <div className="filter-group">
+          <label htmlFor="marka-select">Марка автомобиля:</label>
+          <select
+            id="marka-select"
+            className="filter-select"
+            value={selectedMarka}
+            onChange={(e) => handleMarkaChange(e.target.value)}
+            disabled={!categories}
+          >
+            <option value="">Все марки</option>
+            {categories?.brands.map((brand) => (
+              <option key={brand} value={brand}>
+                {brand}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <div className="catalog-filters-card">
-          <div className="filters-grid">
-            <div className="filter-group">
-              <label htmlFor="brand" className="filter-label">Марка автомобиля</label>
-              <select
-                id="brand"
-                className="filter-select"
-                value={selectedBrand}
-                onChange={(e) => {
-                  setSelectedBrand(e.target.value);
-                  setSelectedModelYear('');
-                  setProducts([]);
-                }}
-              >
-                <option value="">Выберите марку</option>
-                {brands.map(brand => (
-                  <option key={brand.code} value={brand.code}>
-                    {brand.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <label htmlFor="model" className="filter-label">Модель и год</label>
-              <select
-                id="model"
-                className="filter-select"
-                value={selectedModelYear}
-                onChange={(e) => setSelectedModelYear(e.target.value)}
-                disabled={!selectedBrand}
-              >
-                <option value="">Выберите модель и год</option>
-                {modelYears.map((item, index) => (
-                  <option key={index} value={`${item.modelCode}|${item.yearCode}`}>
-                    {item.model} ({item.year})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <label htmlFor="category" className="filter-label">Категория</label>
-              <select
-                id="category"
-                className="filter-select"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-              >
-                <option value="">Все категории</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="filters-actions">
-            <button
-              onClick={handleSearch}
-              className="search-btn"
-              disabled={!selectedBrand || !selectedModelYear}
-            >
-              Показать запчасти
-            </button>
-            <button onClick={resetFilters} className="reset-btn">
-              Сбросить фильтры
-            </button>
-          </div>
+        <div className="filter-group">
+          <label htmlFor="model-select">Модель:</label>
+          <select
+            id="model-select"
+            className="filter-select"
+            value={selectedModel}
+            onChange={(e) => handleModelChange(e.target.value)}
+            disabled={!selectedMarka || availableModels.length === 0}
+          >
+            <option value="">Все модели</option>
+            {availableModels.map((model) => (
+              <option key={model} value={model}>
+                {model}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {products.length > 0 && (
-          <>
-            <div className="catalog-results-header">
-              <div className="results-count">
-                Найдено запчастей: <span>{products.length}</span>
-              </div>
-              <div className="results-sort">
-                <label htmlFor="sort">Сортировка:</label>
-                <select
-                  id="sort"
-                  className="sort-select"
-                  value={selectedSort}
-                  onChange={(e) => {
-                    setSelectedSort(e.target.value);
-                    handleSearch(); // Re-apply search with new sort
-                  }}
-                >
-                  <option value="">По умолчанию</option>
-                  <option value="price_asc">Цена: по возрастанию</option>
-                  <option value="price_desc">Цена: по убыванию</option>
-                  <option value="name">По названию</option>
-                </select>
-              </div>
-            </div>
+        <div className="filter-group">
+          <label htmlFor="generation-select">Поколение:</label>
+          <select
+            id="generation-select"
+            className="filter-select"
+            value={selectedGeneration}
+            onChange={(e) => handleGenerationChange(e.target.value)}
+            disabled={!selectedModel || availableGenerations.length === 0}
+          >
+            <option value="">Все поколения</option>
+            {availableGenerations.map((gen) => (
+              <option key={gen} value={gen}>
+                {gen}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            <div className="products-grid">
-              {products.map(product => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </>
-        )}
-
-        {products.length === 0 && (searchQuery.trim() || (selectedBrand && selectedModelYear)) && (
-          <div className="no-results">
-            <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" stroke="currentColor"/>
-              <path d="m21 21-4.35-4.35" stroke="currentColor"/>
-            </svg>
-            <h3>Запчасти не найдены</h3>
-            <p>Попробуйте изменить параметры поиска или выбрать другую модель</p>
-          </div>
+        {(selectedMarka || selectedModel || selectedGeneration) && (
+          <button className="reset-filters-btn" onClick={resetFilters}>
+            Сбросить фильтры
+          </button>
         )}
       </div>
+
+      {/* Products Grid */}
+      {loading ? (
+        <div className="catalog-loading">
+          <div className="loading-spinner"></div>
+          <p>Загрузка товаров...</p>
+        </div>
+      ) : products.length === 0 ? (
+        <div className="catalog-empty">
+          <p>Товары не найдены</p>
+          {(selectedMarka || selectedModel || selectedGeneration) && (
+            <button className="reset-filters-btn" onClick={resetFilters}>
+              Сбросить фильтры
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="products-grid">
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                article={product.article}
+                name={product.fullName}
+                price={parseFloat(product.price)}
+                quantity={product.quantity}
+                brand={product.marka}
+                model={product.model}
+                oem={product.oem}
+              />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="catalog-pagination">
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                ← Предыдущая
+              </button>
+              
+              <div className="pagination-info">
+                Страница {currentPage} из {totalPages}
+              </div>
+              
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Следующая →
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
-};
-
-export default CatalogPage;
-
+}

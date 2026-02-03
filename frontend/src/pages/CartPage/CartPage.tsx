@@ -1,32 +1,25 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { getCartItems, getCartTotal, getCartItemsCount, updateCartItemQuantity, removeFromCart, getAvailabilityText } from '../../mockup/cartData';
-import type { CartItem } from '../../mockup/cartData';
+import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useCart } from '../../context/CartContext';
 import './CartPage.css';
 
 const CartPage = () => {
-  const [cartItems, setCartItems] = useState<CartItem[]>(getCartItems());
-  const navigate = useNavigate();
+  const { cart, itemCount, totalPrice, isLoading, updateQuantity, removeItem } = useCart();
 
-  const handleQuantityChange = (itemId: string, newQuantity: number) => {
-    updateCartItemQuantity(itemId, newQuantity);
-    setCartItems([...getCartItems()]);
-  };
+  if (isLoading) {
+    return (
+      <div className="cart-page">
+        <div className="cart-container">
+          <div className="cart-loading">
+            <div className="loading-spinner"></div>
+            <p>Загрузка корзины...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const handleRemoveItem = (itemId: string) => {
-    removeFromCart(itemId);
-    setCartItems([...getCartItems()]);
-  };
-
-  const handleCheckout = () => {
-    // TODO: Navigate to checkout page
-    alert('Оформление заказа - функция в разработке');
-  };
-
-  const total = getCartTotal();
-  const itemsCount = getCartItemsCount();
-
-  if (cartItems.length === 0) {
+  if (cart.length === 0) {
     return (
       <div className="cart-page">
         <div className="cart-container">
@@ -51,6 +44,11 @@ const CartPage = () => {
     );
   }
 
+  const handleCheckout = () => {
+    // TODO: Navigate to checkout page
+    alert('Оформление заказа - функция в разработке');
+  };
+
   return (
     <div className="cart-page">
       <div className="cart-container">
@@ -60,26 +58,52 @@ const CartPage = () => {
           {/* Cart Items List */}
           <div className="cart-items-section">
             <div className="cart-items-header">
-              <h2>Товары ({itemsCount})</h2>
+              <h2>Товары ({itemCount})</h2>
             </div>
 
             <div className="cart-items-list">
-              {cartItems.map((item) => (
+              {cart.map((item) => (
                 <div key={item.id} className="cart-item">
-                  <Link to={`/product/${item.article}`} className="cart-item-image">
-                    <img src={item.imageUrl} alt={item.name} />
+                  <Link to={`/product/${item.id}`} className="cart-item-image">
+                    <img src="/product-placeholder.png" alt={item.name} />
                   </Link>
 
                   <div className="cart-item-info">
-                    <Link to={`/product/${item.article}`} className="cart-item-name">
+                    <Link to={`/product/${item.id}`} className="cart-item-name">
                       {item.name}
                     </Link>
                     <div className="cart-item-details">
-                      <span className="cart-item-brand">{item.brand} {item.model} ({item.year})</span>
+                      <span className="cart-item-brand">{item.marka} {item.model}</span>
                       <span className="cart-item-article">Артикул: {item.article}</span>
-                      <span className={`cart-item-availability ${item.availability === 'in_stock' ? 'in-stock' : ''}`}>
-                        {getAvailabilityText(item.availability)}
-                      </span>
+                      
+                      {/* Availability Status */}
+                      {!item.available && (
+                        <span className="cart-item-availability out-of-stock">
+                          ⚠️ Товар снят с продажи
+                        </span>
+                      )}
+                      {item.available && item.currentStock === 0 && (
+                        <span className="cart-item-availability out-of-stock">
+                          Нет в наличии
+                        </span>
+                      )}
+                      {item.available && item.currentStock > 0 && item.quantity > item.currentStock && (
+                        <span className="cart-item-availability warning">
+                          ⚠️ Доступно только {item.currentStock} шт.
+                        </span>
+                      )}
+                      {item.available && item.currentStock > 0 && item.quantity <= item.currentStock && (
+                        <span className="cart-item-availability in-stock">
+                          В наличии
+                        </span>
+                      )}
+                      
+                      {/* Price Changed Warning */}
+                      {item.priceChanged && item.currentPrice && (
+                        <span className="cart-item-price-change">
+                          ⚠️ Цена изменилась: {item.currentPrice.toLocaleString('ru-RU')} ₽
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -87,7 +111,7 @@ const CartPage = () => {
                     <div className="cart-item-quantity">
                       <button
                         className="quantity-btn"
-                        onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
                         disabled={item.quantity <= 1}
                       >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -97,7 +121,8 @@ const CartPage = () => {
                       <span className="quantity-value">{item.quantity}</span>
                       <button
                         className="quantity-btn"
-                        onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        disabled={!item.available || item.quantity >= item.currentStock}
                       >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <line x1="12" y1="5" x2="12" y2="19"/>
@@ -107,12 +132,12 @@ const CartPage = () => {
                     </div>
 
                     <div className="cart-item-price">
-                      {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
+                      {(item.priceSnapshot * item.quantity).toLocaleString('ru-RU')} ₽
                     </div>
 
                     <button
                       className="cart-item-remove"
-                      onClick={() => handleRemoveItem(item.id)}
+                      onClick={() => removeItem(item.id)}
                       aria-label="Удалить товар"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -133,8 +158,8 @@ const CartPage = () => {
               
               <div className="cart-summary-details">
                 <div className="cart-summary-row">
-                  <span>Товары ({itemsCount})</span>
-                  <span>{total.toLocaleString('ru-RU')} ₽</span>
+                  <span>Товары ({itemCount})</span>
+                  <span>{totalPrice.toLocaleString('ru-RU')} ₽</span>
                 </div>
                 <div className="cart-summary-row">
                   <span>Доставка</span>
@@ -144,7 +169,7 @@ const CartPage = () => {
 
               <div className="cart-summary-total">
                 <span>К оплате</span>
-                <span className="cart-summary-total-price">{total.toLocaleString('ru-RU')} ₽</span>
+                <span className="cart-summary-total-price">{totalPrice.toLocaleString('ru-RU')} ₽</span>
               </div>
 
               <button className="cart-checkout-btn" onClick={handleCheckout}>
@@ -172,4 +197,3 @@ const CartPage = () => {
 };
 
 export default CartPage;
-

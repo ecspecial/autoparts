@@ -20,35 +20,35 @@ const HeadlightIcon = () => (
 );
 
 const MainPage = () => {
-  const categories = [
-    { title: 'Капоты', icon: <HoodIcon />, link: '/catalog/hoods' },
-    { title: 'Бамперы', icon: <BumperIcon />, link: '/catalog/bumpers' },
-    { title: 'Крылья', icon: <FenderIcon />, link: '/catalog/fenders' },
-    { title: 'Фары', icon: <HeadlightIcon />, link: '/catalog/headlights' },
-  ];
-
-  return (
-    <div className="main-page">
-      <SearchSection />
-      
-      <section className="categories-section">
-        <div className="categories-container">
-          <h2 className="categories-title">Популярные категории</h2>
-          <div className="categories-grid">
-            {categories.map((category) => (
-              <CategoryCard
-                key={category.title}
-                title={category.title}
-                icon={category.icon}
-                link={category.link}
-              />
-            ))}
+    const categories = [
+      { title: 'Капоты', icon: <HoodIcon />, link: '/catalog?nameKeyword=капот' },
+      { title: 'Бамперы', icon: <BumperIcon />, link: '/catalog?nameKeyword=бампер' },
+      { title: 'Крылья', icon: <FenderIcon />, link: '/catalog?nameKeyword=крыл' },
+      { title: 'Фары', icon: <HeadlightIcon />, link: '/catalog?nameKeyword=фар' },
+    ];
+  
+    return (
+      <div className="main-page">
+        <SearchSection />
+        
+        <section className="categories-section">
+          <div className="categories-container">
+            <h2 className="categories-title">Популярные категории</h2>
+            <div className="categories-grid">
+              {categories.map((category) => (
+                <CategoryCard
+                  key={category.title}
+                  title={category.title}
+                  icon={category.icon}
+                  link={category.link}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
-    </div>
-  );
-};
+        </section>
+      </div>
+    );
+  };
 
 export default MainPage;
 

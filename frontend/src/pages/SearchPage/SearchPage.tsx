@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { productsData } from '../../mockup/productsData';
-import type { Product } from '../../mockup/productsData';
+import { productsApi } from '../../api/products';
+import type { Product } from '../../api/products';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import './SearchPage.css';
 
@@ -11,22 +11,37 @@ const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
 
-  const performSearch = (query: string) => {
+  const performSearch = async (query: string) => {
     if (!query.trim()) {
       setSearchResults([]);
       setHasSearched(false);
+      setTotal(0);
       return;
     }
 
-    // Search by article (partial match, case-insensitive)
-    const searchTerm = query.trim().toLowerCase();
-    const results = productsData.filter(product => 
-      product.article.toLowerCase().includes(searchTerm)
-    );
+    setLoading(true);
+    try {
+      // Search by article
+      const response = await productsApi.searchProducts({
+        article: query.trim(),
+        page: 1,
+        limit: 100, // Show more results on search page
+      });
 
-    setSearchResults(results);
-    setHasSearched(true);
+      setSearchResults(response.items);
+      setTotal(response.total);
+      setHasSearched(true);
+    } catch (error) {
+      console.error('Search failed:', error);
+      setSearchResults([]);
+      setTotal(0);
+      setHasSearched(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -46,6 +61,7 @@ const SearchPage = () => {
     setSearchQuery('');
     setSearchResults([]);
     setHasSearched(false);
+    setTotal(0);
     setSearchParams({});
   };
 
@@ -87,13 +103,13 @@ const SearchPage = () => {
               </button>
             )}
           </div>
-          <button type="submit" className="search-submit-btn">
-            Найти
+          <button type="submit" className="search-submit-btn" disabled={loading}>
+            {loading ? 'Поиск...' : 'Найти'}
           </button>
         </form>
 
         {/* Search Examples */}
-        {!hasSearched && (
+        {!hasSearched && !loading && (
           <div className="search-examples">
             <p className="search-examples-title">Примеры поиска:</p>
             <div className="search-examples-tags">
@@ -102,8 +118,8 @@ const SearchPage = () => {
                 className="search-example-tag"
                 onClick={() => {
                   setSearchQuery('SDOCT05');
-                  const e = { preventDefault: () => {} } as React.FormEvent;
-                  handleSearch(e);
+                  performSearch('SDOCT05');
+                  setSearchParams({ query: 'SDOCT05' });
                 }}
               >
                 SDOCT05
@@ -113,8 +129,8 @@ const SearchPage = () => {
                 className="search-example-tag"
                 onClick={() => {
                   setSearchQuery('KARIO17-520');
-                  const e = { preventDefault: () => {} } as React.FormEvent;
-                  handleSearch(e);
+                  performSearch('KARIO17-520');
+                  setSearchParams({ query: 'KARIO17-520' });
                 }}
               >
                 KARIO17-520
@@ -124,8 +140,8 @@ const SearchPage = () => {
                 className="search-example-tag"
                 onClick={() => {
                   setSearchQuery('BME3405');
-                  const e = { preventDefault: () => {} } as React.FormEvent;
-                  handleSearch(e);
+                  performSearch('BME3405');
+                  setSearchParams({ query: 'BME3405' });
                 }}
               >
                 BME3405
@@ -135,8 +151,8 @@ const SearchPage = () => {
                 className="search-example-tag"
                 onClick={() => {
                   setSearchQuery('880');
-                  const e = { preventDefault: () => {} } as React.FormEvent;
-                  handleSearch(e);
+                  performSearch('880');
+                  setSearchParams({ query: '880' });
                 }}
               >
                 880
@@ -145,21 +161,39 @@ const SearchPage = () => {
           </div>
         )}
 
+        {/* Loading State */}
+        {loading && (
+          <div className="search-loading">
+            <div className="loading-spinner"></div>
+            <p>Поиск товаров...</p>
+          </div>
+        )}
+
         {/* Search Results */}
-        {hasSearched && (
+        {hasSearched && !loading && (
           <div className="search-results">
             {searchResults.length > 0 ? (
               <>
                 <div className="search-results-header">
                   <h2 className="search-results-title">
-                    Найдено: <span>{searchResults.length}</span> {searchResults.length === 1 ? 'товар' : searchResults.length < 5 ? 'товара' : 'товаров'}
+                    Найдено: <span>{total}</span> {total === 1 ? 'товар' : total < 5 ? 'товара' : 'товаров'}
                   </h2>
                   <p className="search-results-query">по запросу "{searchQuery}"</p>
                 </div>
 
                 <div className="search-results-grid">
                   {searchResults.map((product) => (
-                    <ProductCard key={product.id} product={product} />
+                    <ProductCard
+                      key={product.id}
+                      id={product.id}
+                      article={product.article}
+                      name={product.fullName}
+                      price={parseFloat(product.price)}
+                      quantity={product.quantity}
+                      brand={product.marka}
+                      model={product.model}
+                      oem={product.oem}
+                    />
                   ))}
                 </div>
               </>
@@ -175,7 +209,7 @@ const SearchPage = () => {
                 </div>
                 <h3 className="search-no-results-title">Ничего не найдено</h3>
                 <p className="search-no-results-text">
-                  По запросу "<strong>{searchQuery}</strong>" товары не найдены.
+                  По запросу <strong>"{searchQuery}"</strong> товары не найдены.
                   <br />
                   Попробуйте изменить запрос или используйте каталог.
                 </p>
@@ -192,4 +226,3 @@ const SearchPage = () => {
 };
 
 export default SearchPage;
-

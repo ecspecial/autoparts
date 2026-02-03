@@ -1,84 +1,153 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { Product } from '../../mockup/productsData';
-import './ProductCard.css'; 
+import { useCart } from '../../context/CartContext';
+import Modal from '../Modal/Modal';
+import './ProductCard.css';
 
 interface ProductCardProps {
-  product: Product;
+  id: number;
+  article: string;
+  name: string;
+  price: number;
+  quantity: number;
+  brand?: string;
+  model?: string;
+  oem?: string | null;
 }
 
-const ProductCard = ({ product }: ProductCardProps) => {
-  const getAvailabilityText = (status: string) => {
-    switch (status) {
-      case 'in_stock': return 'В наличии';
-      case 'on_order': return 'Под заказ';
-      case 'out_of_stock': return 'Нет в наличии';
-      default: return '';
+export default function ProductCard({ 
+  id, 
+  article, 
+  name, 
+  price, 
+  quantity,
+  brand,
+  model,
+  oem 
+}: ProductCardProps) {
+  const { addToCart } = useCart();
+  const [isAdding, setIsAdding] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalType, setModalType] = useState<'error' | 'success' | 'info'>('info');
+  
+  const [imageSrc, setImageSrc] = useState(`/images/products/${article}.jpg`);
+  const [imageError, setImageError] = useState(false);
+  
+  const handleImageError = () => {
+    if (!imageError) {
+      setImageError(true);
+      setImageSrc('/product-placeholder.png');
     }
   };
 
-  const getAvailabilityClass = (status: string) => {
-    switch (status) {
-      case 'in_stock': return 'in-stock';
-      case 'on_order': return 'on-order';
-      case 'out_of_stock': return 'out-of-stock';
-      default: return '';
-    }
-  };
+  const inStock = quantity > 0;
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent navigation
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-    // TODO: Add to cart logic
-    console.log('Added to cart:', product.article);
+    
+    if (!inStock || isAdding) return;
+
+    setIsAdding(true);
+    const startTime = Date.now();
+
+    try {
+      await addToCart({
+        article,
+        quantity: 1,
+        name,
+        fullName: name,
+        marka: brand || '',
+        model: model || '',
+        priceSnapshot: price,
+      });
+
+      // Ensure spinner shows for at least 500ms
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, 500 - elapsed);
+      
+      await new Promise(resolve => setTimeout(resolve, remaining));
+      
+      // Success - no modal
+    } catch (error: any) {
+      console.error('Add to cart error:', error);
+      
+      // Ensure spinner shows for at least 500ms even on error
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, 500 - elapsed);
+      await new Promise(resolve => setTimeout(resolve, remaining));
+      
+      // Show error modal
+      const errorMessage = error?.response?.data?.message || error?.message || 'Ошибка добавления в корзину';
+      setModalMessage(errorMessage);
+      setModalType('error');
+      setModalOpen(true);
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   return (
-    <Link to={`/product/${product.article}`} className="product-card">
-      <div className="product-image-wrapper">
-        <img src={product.imageUrl} alt={product.name} className="product-image" />
-      </div>
+    <>
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        message={modalMessage}
+        type={modalType}
+      />
       
-      <div className="product-info">
-        <div className="product-article">Артикул {product.article}</div>
-        <h3 className="product-name">{product.name}</h3>
-        <div className="product-brand">{product.brand} {product.model} ({product.year})</div>
-        
-        <div className="product-footer">
-          <div className="product-price-section">
-            <div className="product-price">{product.price.toLocaleString('ru-RU')} ₽</div>
-            <div className={`product-availability ${getAvailabilityClass(product.availability)}`}>
-              {getAvailabilityText(product.availability)}
+      <div className="product-card">
+        <Link to={`/product/${id}`} className="product-card-link">
+            <div className="product-card-image">
+                <img 
+                src={imageSrc} 
+                alt={name}
+                onError={handleImageError}
+                />
+                {!inStock && <div className="out-of-stock-badge">Нет в наличии</div>}
             </div>
-          </div>
           
-          <div className="product-actions">
-            <button className="product-cart-btn" onClick={handleAddToCart}>В корзину</button>
-            <div className="product-actions-row">
-              <a 
-                href={`https://www.ozon.ru/search/?text=${encodeURIComponent(product.article)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="marketplace-badge ozon"
-                onClick={(e) => e.stopPropagation()}
-              >
-                ozon
-              </a>
-              <a 
-                href={`https://www.wildberries.ru/catalog/0/search.aspx?search=${encodeURIComponent(product.article)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="marketplace-badge wb"
-                onClick={(e) => e.stopPropagation()}
-              >
-                wildberries
-              </a>
+          <div className="product-card-content">
+            <div className="product-card-header">
+              <span className="product-article">Арт: {article}</span>
+              {brand && model && (
+                <span className="product-brand-model">{brand} {model}</span>
+              )}
+            </div>
+            
+            <h3 className="product-card-title">{name}</h3>
+            
+            {oem && (
+              <div className="product-oem">
+                <span className="oem-label">OEM:</span> {oem}
+              </div>
+            )}
+            
+            <div className="product-card-footer">
+              <div className="product-price">{price.toLocaleString('ru-RU')} ₽</div>
+              <div className={`product-stock ${inStock ? 'in-stock' : 'out-of-stock'}`}>
+                {inStock ? `В наличии: ${quantity} шт.` : 'Нет в наличии'}
+              </div>
             </div>
           </div>
-        </div>
+        </Link>
+        
+        <button 
+          className="add-to-cart-btn"
+          onClick={handleAddToCart}
+          disabled={!inStock || isAdding}
+        >
+          {isAdding ? (
+            <>
+              <span className="button-spinner"></span>
+              Добавление...
+            </>
+          ) : (
+            inStock ? 'В корзину' : 'Недоступно'
+          )}
+        </button>
       </div>
-    </Link>
+    </>
   );
-};
-
-export default ProductCard;
-
+}
