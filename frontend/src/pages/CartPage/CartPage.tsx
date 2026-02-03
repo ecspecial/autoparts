@@ -65,7 +65,13 @@ const CartPage = () => {
               {cart.map((item) => (
                 <div key={item.id} className="cart-item">
                   <Link to={`/product/${item.id}`} className="cart-item-image">
-                    <img src="/product-placeholder.png" alt={item.name} />
+                    <img 
+                        src={`/images/products/${item.article}.jpg`}
+                        alt={item.name}
+                        onError={(e) => {
+                        e.currentTarget.src = "/product-placeholder.png";
+                        }}
+                    />
                   </Link>
 
                   <div className="cart-item-info">
