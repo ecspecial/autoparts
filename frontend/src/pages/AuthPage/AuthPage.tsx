@@ -16,6 +16,38 @@ function AuthPage() {
   const { login: authLogin, register: authRegister } = useAuth();
   const navigate = useNavigate();
 
+  // ⭐ ADD THESE VALIDATION HANDLERS HERE (after useState declarations)
+  const handleInvalidLogin = (e: React.FormEvent<HTMLInputElement>) => {
+    const input = e.target as HTMLInputElement;
+    if (input.validity.valueMissing) {
+      input.setCustomValidity('Пожалуйста, введите логин');
+    } else {
+      input.setCustomValidity('');
+    }
+  };
+
+  const handleLoginInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const input = e.target as HTMLInputElement;
+    input.setCustomValidity('');
+  };
+
+  const handleInvalidPassword = (e: React.FormEvent<HTMLInputElement>) => {
+    const input = e.target as HTMLInputElement;
+    if (input.validity.tooShort) {
+      input.setCustomValidity('Пароль должен содержать минимум 8 символов');
+    } else if (input.validity.valueMissing) {
+      input.setCustomValidity('Пожалуйста, введите пароль');
+    } else {
+      input.setCustomValidity('');
+    }
+  };
+
+  const handlePasswordInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const input = e.target as HTMLInputElement;
+    input.setCustomValidity('');
+  };
+  // ⭐ END OF NEW HANDLERS
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -40,7 +72,7 @@ function AuthPage() {
       } else {
         await authRegister(login, password);
       }
-      navigate('/'); // Перенаправляем на домашнюю страницу после успешного входа
+      navigate('/');
     } catch (err: any) {
       setError(err.message || `Ошибка ${mode === 'login' ? 'входа' : 'регистрации'}`);
     } finally {
@@ -63,6 +95,7 @@ function AuthPage() {
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label htmlFor="login">Логин</label>
+            {/* ⭐ UPDATE LOGIN INPUT - ADD onInvalid AND onInput */}
             <input
               type="text"
               id="login"
@@ -71,11 +104,14 @@ function AuthPage() {
               required
               disabled={isLoading}
               autoComplete="username"
+              onInvalid={handleInvalidLogin}
+              onInput={handleLoginInput}
             />
           </div>
 
           <div className="form-group">
             <label htmlFor="password">Пароль</label>
+            {/* ⭐ UPDATE PASSWORD INPUT - ADD onInvalid AND onInput */}
             <input
               type="password"
               id="password"
@@ -85,6 +121,8 @@ function AuthPage() {
               minLength={8}
               disabled={isLoading}
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              onInvalid={handleInvalidPassword}
+              onInput={handlePasswordInput}
             />
             {mode === 'register' && <small>Минимум 8 символов</small>}
           </div>
@@ -92,6 +130,7 @@ function AuthPage() {
           {mode === 'register' && (
             <div className="form-group">
               <label htmlFor="confirmPassword">Подтвердите пароль</label>
+              {/* ⭐ UPDATE CONFIRM PASSWORD INPUT - ADD onInvalid AND onInput */}
               <input
                 type="password"
                 id="confirmPassword"
@@ -101,6 +140,8 @@ function AuthPage() {
                 minLength={8}
                 disabled={isLoading}
                 autoComplete="new-password"
+                onInvalid={handleInvalidPassword}
+                onInput={handlePasswordInput}
               />
             </div>
           )}
