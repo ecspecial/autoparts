@@ -11,22 +11,25 @@ export class AuthService {
   ) {}
 
   async register(login: string, password: string, discount: number = 0) {
+    // Normalize login to lowercase for case-insensitive comparison
+    const normalizedLogin = login.toLowerCase().trim();
+    
     // Проверяем, если пользователь уже существует
-    const existingUser = await this.usersService.findByLogin(login);
+    const existingUser = await this.usersService.findByLogin(normalizedLogin);
     if (existingUser) {
         throw new ConflictException('Пользователь с таким логином уже существует');
     }
-
+  
     // Хешируем пароль
     const passwordHash = await bcrypt.hash(password, 10);
-
-    // Создаем пользователя
-    const user = await this.usersService.create(login, passwordHash, discount);
-
+  
+    // Создаем пользователя с нормализованным логином
+    const user = await this.usersService.create(normalizedLogin, passwordHash, discount);
+  
     // Генерируем JWT токен
     const payload = { sub: user.id, login: user.login, discount: user.discount };
     const accessToken = this.jwtService.sign(payload);
-
+  
     return {
       accessToken,
       user: {
@@ -39,22 +42,25 @@ export class AuthService {
   }
 
   async login(login: string, password: string) {
+    // Normalize login to lowercase for case-insensitive comparison
+    const normalizedLogin = login.toLowerCase().trim();
+    
     // Ищем пользователя
-    const user = await this.usersService.findByLogin(login);
+    const user = await this.usersService.findByLogin(normalizedLogin);
     if (!user) {
-        throw new UnauthorizedException('Пользователь не найден');
+        throw new UnauthorizedException('Неверный логин или пароль');
     }
-
+  
     // Проверяем пароль
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
-        throw new UnauthorizedException('Неверный пароль');
+        throw new UnauthorizedException('Неверный логин или пароль');
     }
-
+  
     // Генерируем JWT токен
     const payload = { sub: user.id, login: user.login, discount: user.discount };
     const accessToken = this.jwtService.sign(payload);
-
+  
     return {
       accessToken,
       user: {

@@ -97,16 +97,19 @@ function AuthPage() {
             <label htmlFor="login">Логин</label>
             {/* ⭐ UPDATE LOGIN INPUT - ADD onInvalid AND onInput */}
             <input
-              type="text"
-              id="login"
-              value={login}
-              onChange={(e) => setLogin(e.target.value)}
-              required
-              disabled={isLoading}
-              autoComplete="username"
-              onInvalid={handleInvalidLogin}
-              onInput={handleLoginInput}
-            />
+                type="text"
+                id="login"
+                value={login}
+                onChange={(e) => setLogin(e.target.value)}
+                required
+                disabled={isLoading}
+                autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
+                onInvalid={handleInvalidLogin}
+                onInput={handleLoginInput}
+                />
           </div>
 
           <div className="form-group">
