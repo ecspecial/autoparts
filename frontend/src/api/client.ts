@@ -25,8 +25,12 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid - clear it
+    // Don't redirect on 401 for login/register endpoints
+    const isAuthEndpoint = error.config?.url?.includes('/auth/login') || 
+                          error.config?.url?.includes('/auth/register');
+    
+    if (error.response?.status === 401 && !isAuthEndpoint) {
+      // Token expired or invalid - clear it and redirect
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
       window.location.href = '/login';
