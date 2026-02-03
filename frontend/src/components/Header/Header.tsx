@@ -45,13 +45,15 @@ const Header = () => {
           <Link to="/contacts" className={`header-nav-link ${location.pathname === '/contacts' ? 'active' : ''}`}>
             Контакты
           </Link>
-          <Link to="/downloads" className="nav-link">Прайс-лист</Link>
+          <Link to="/downloads" className={`header-nav-link ${location.pathname === '/downloads' ? 'active' : ''}`} onClick={closeMobileMenu}>
+            Прайс-лист
+          </Link>
           
           {/* Auth-based navigation */}
           {isAuthenticated ? (
             <>
-              <Link to="/profile" className={`header-nav-link ${location.pathname === '/profile' ? 'active' : ''}`}>
-                {user?.login}
+              <Link to="/profile" className={`header-nav-link ${location.pathname === '/profile' ? 'active' : ''}`} onClick={closeMobileMenu}>
+                Профиль
               </Link>
               <Link to="/cart" className="header-cart">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -101,13 +103,15 @@ const Header = () => {
         <Link to="/contacts" className={`mobile-menu-link ${location.pathname === '/contacts' ? 'active' : ''}`} onClick={closeMobileMenu}>
           Контакты
         </Link>
-        <Link to="/downloads" className="nav-link">Прайс-лист</Link>
+        <Link to="/downloads" className={`mobile-menu-link ${location.pathname === '/downloads' ? 'active' : ''}`} onClick={closeMobileMenu}>
+          Прайс-лист
+        </Link>
         
         {/* Auth-based mobile navigation */}
         {isAuthenticated ? (
           <>
             <Link to="/profile" className={`mobile-menu-link ${location.pathname === '/profile' ? 'active' : ''}`} onClick={closeMobileMenu}>
-              {user?.login}
+              Профиль
             </Link>
             <Link to="/cart" className={`mobile-menu-link ${location.pathname === '/cart' ? 'active' : ''}`} onClick={closeMobileMenu}>
               Корзина
