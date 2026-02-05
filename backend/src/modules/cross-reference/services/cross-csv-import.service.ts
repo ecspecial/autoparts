@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CrossReference } from '../entities/cross-reference.entity';
 import * as fs from 'fs';
-import csvParser from 'csv-parser';  // ← Changed this line
+import csvParser from 'csv-parser';
 import * as path from 'path';
 
 @Injectable()
@@ -70,22 +70,32 @@ export class CrossCsvImportService {
     });
   }
 
+  // Нормализация: убирает все кроме букв и цифр, переводит в верхний регистр
   normalizeArticle(input: string): string {
     return input
       .toUpperCase()
       .replace(/[^A-ZА-Я0-9]/g, '');
   }
 
+  // ИСПРАВЛЕННЫЙ метод поиска по OEM
   async findArticlesByOem(oemInput: string): Promise<string[]> {
-    const normalizedOem = this.normalizeArticle(oemInput);
+    const normalizedInput = this.normalizeArticle(oemInput);
     
-    const matches = await this.crossReferenceRepository
-      .createQueryBuilder('cr')
-      .select('cr.article')
-      .where('UPPER(REGEXP_REPLACE(cr.oem, \'[^A-ZА-Я0-9]\', \'\', \'g\')) = :normalizedOem', { normalizedOem })
-      .orWhere('cr.oem = :oemInput', { oemInput })
-      .getMany();
-
-    return [...new Set(matches.map(m => m.article))];
+    this.logger.log(`Searching OEM: "${oemInput}" → normalized: "${normalizedInput}"`);
+    
+    // Получаем все записи и фильтруем в памяти
+    // Это работает быстро если записей не миллионы
+    const allRecords = await this.crossReferenceRepository.find();
+    
+    const matchedArticles = allRecords
+      .filter(record => this.normalizeArticle(record.oem) === normalizedInput)
+      .map(record => record.article);
+    
+    // Убираем дубликаты
+    const uniqueArticles = [...new Set(matchedArticles)];
+    
+    this.logger.log(`Found ${uniqueArticles.length} article(s): ${uniqueArticles.join(', ')}`);
+    
+    return uniqueArticles;
   }
 }

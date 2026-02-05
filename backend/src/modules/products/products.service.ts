@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CrossCsvImportService } from '../cross-reference/services/cross-csv-import.service';
 
@@ -12,7 +12,6 @@ export class ProductsService {
     private crossCsvImportService: CrossCsvImportService,
   ) {}
 
-  // Add this new method
   async findById(id: number): Promise<Product> {
     const product = await this.productRepository.findOne({
       where: { id },
@@ -36,9 +35,9 @@ export class ProductsService {
       return { products: [], total: 0, articlesFound: [] };
     }
   
-    // Use productRepository (not productsRepository)
+    // Используем In() для поиска по массиву артикулов
     const [products, total] = await this.productRepository.findAndCount({
-      where: articles.map(article => ({ article })),
+      where: { article: In(articles) },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -46,6 +45,7 @@ export class ProductsService {
     return { products, total, articlesFound: articles };
   }
 
+  // УЛУЧШЕННЫЙ поиск по артикулу с нормализацией
   async search(filters: {
     marka?: string;
     model?: string;
@@ -70,10 +70,16 @@ export class ProductsService {
     }
   
     if (filters.article) {
-      query.andWhere('product.article ILIKE :article', { article: `%${filters.article}%` });
+      // Нормализуем поисковый запрос
+      const normalized = this.normalizeForSearch(filters.article);
+      
+      // Ищем с учетом нормализации (убираем дефисы, пробелы, регистр не важен)
+      query.andWhere(
+        "UPPER(REGEXP_REPLACE(product.article, '[^A-ZА-Я0-9]', '', 'gi')) LIKE UPPER(:article)",
+        { article: `%${normalized}%` }
+      );
     }
   
-    // ← ADD THIS: Search by name or fullName
     if (filters.nameKeyword) {
       query.andWhere(
         '(product.name ILIKE :keyword OR product.fullName ILIKE :keyword)',
@@ -95,5 +101,12 @@ export class ProductsService {
       limit: filters.limit,
       pages: Math.ceil(total / filters.limit),
     };
+  }
+
+  // Вспомогательный метод нормализации
+  private normalizeForSearch(input: string): string {
+    return input
+      .toUpperCase()
+      .replace(/[^A-ZА-Я0-9]/g, '');
   }
 }
