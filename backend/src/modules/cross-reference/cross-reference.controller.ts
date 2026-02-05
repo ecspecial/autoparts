@@ -1,8 +1,10 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, UnauthorizedException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { IsString } from 'class-validator';
 import { CrossCsvImportService } from './services/cross-csv-import.service';
 
 class ImportDto {
+  @IsString()
   password: string;
 }
 
@@ -24,7 +26,8 @@ export class CrossReferenceController {
       type: 'object',
       properties: {
         password: { type: 'string', example: 'your-secret-password' }
-      }
+      },
+      required: ['password']
     }
   })
   @ApiResponse({ status: 200, description: 'Import successful' })
