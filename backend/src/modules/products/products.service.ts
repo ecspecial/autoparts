@@ -29,20 +29,29 @@ export class ProductsService {
     page: number = 1,
     limit: number = 20,
   ): Promise<{ products: Product[]; total: number; articlesFound: string[] }> {
+    // Найти все артикулы по OEM
     const articles = await this.crossCsvImportService.findArticlesByOem(oemInput);
   
     if (articles.length === 0) {
       return { products: [], total: 0, articlesFound: [] };
     }
   
-    // Используем In() для поиска по массиву артикулов
+    // Найти продукты
     const [products, total] = await this.productRepository.findAndCount({
       where: { article: In(articles) },
       skip: (page - 1) * limit,
       take: limit,
     });
   
-    return { products, total, articlesFound: articles };
+    // ✅ ИСПРАВЛЕНИЕ: Возвращать только артикулы, которые действительно найдены
+    const foundArticles = products.map(p => p.article);
+    const uniqueFoundArticles = [...new Set(foundArticles)];
+  
+    return { 
+      products, 
+      total, 
+      articlesFound: uniqueFoundArticles  // ← Только найденные в products
+    };
   }
 
   // УЛУЧШЕННЫЙ поиск по артикулу с нормализацией

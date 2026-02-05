@@ -26,6 +26,9 @@ export default function CatalogPage() {
   const nameKeyword = searchParams.get('nameKeyword') || '';
   const navigate = useNavigate();
 
+  const [searchType, setSearchType] = useState<'article' | 'oem'>('article');
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Load categories on mount
   useEffect(() => {
     loadCategories();
@@ -101,6 +104,14 @@ export default function CatalogPage() {
     navigate('/catalog', { replace: true });
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      const type = searchType === 'oem' ? 'oem' : 'query';
+      navigate(`/search?${type}=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
   // Get available models for selected brand
   const availableModels = selectedMarka && categories 
     ? categories.modelsByBrand[selectedMarka] || []
@@ -137,6 +148,45 @@ export default function CatalogPage() {
                 Найдено товаров: <strong>{total}</strong>
             </p>
         </div>
+
+        {/* Search Section */}
+<div className="catalog-search-section">
+  <h3 className="catalog-search-title">Поиск товаров</h3>
+  
+  <div className="catalog-search-tabs">
+    <button
+      type="button"
+      className={`catalog-search-tab ${searchType === 'article' ? 'active' : ''}`}
+      onClick={() => setSearchType('article')}
+    >
+      По артикулу
+    </button>
+    <button
+      type="button"
+      className={`catalog-search-tab ${searchType === 'oem' ? 'active' : ''}`}
+      onClick={() => setSearchType('oem')}
+    >
+      По OEM
+    </button>
+  </div>
+
+  <form onSubmit={handleSearch} className="catalog-search-form">
+    <input
+      type="text"
+      className="catalog-search-input"
+      placeholder={
+        searchType === 'article'
+          ? 'Введите артикул (например: KARIO17-520)'
+          : 'Введите OEM номер (например: 6001546685)'
+      }
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+    />
+    <button type="submit" className="catalog-search-button">
+      Найти
+    </button>
+  </form>
+</div>
 
       {/* Filters */}
       <div className="catalog-filters">
