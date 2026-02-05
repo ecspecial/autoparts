@@ -5,18 +5,24 @@ import type { Product } from '../../api/products';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import './SearchPage.css';
 
+type SearchType = 'article' | 'oem';
+
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get('query') || '';
-  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const initialOem = searchParams.get('oem') || '';
+  const [searchType, setSearchType] = useState<SearchType>(initialOem ? 'oem' : 'article');
+  const [searchQuery, setSearchQuery] = useState(initialQuery || initialOem);
   const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [articlesFound, setArticlesFound] = useState<string[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
 
-  const performSearch = async (query: string) => {
+  const performSearch = async (query: string, type: SearchType) => {
     if (!query.trim()) {
       setSearchResults([]);
+      setArticlesFound([]);
       setHasSearched(false);
       setTotal(0);
       return;
@@ -24,19 +30,28 @@ const SearchPage = () => {
 
     setLoading(true);
     try {
-      // Search by article
-      const response = await productsApi.searchProducts({
-        article: query.trim(),
-        page: 1,
-        limit: 100, // Show more results on search page
-      });
-
-      setSearchResults(response.items);
-      setTotal(response.total);
+      if (type === 'oem') {
+        // OEM search
+        const response = await productsApi.searchByOem(query.trim(), 1, 100);
+        setSearchResults(response.products);
+        setArticlesFound(response.articlesFound);
+        setTotal(response.total);
+      } else {
+        // Article search
+        const response = await productsApi.searchProducts({
+          article: query.trim(),
+          page: 1,
+          limit: 100,
+        });
+        setSearchResults(response.items);
+        setArticlesFound([]);
+        setTotal(response.total);
+      }
       setHasSearched(true);
     } catch (error) {
       console.error('Search failed:', error);
       setSearchResults([]);
+      setArticlesFound([]);
       setTotal(0);
       setHasSearched(true);
     } finally {
@@ -45,21 +60,28 @@ const SearchPage = () => {
   };
 
   useEffect(() => {
-    if (initialQuery) {
+    if (initialOem) {
+      setSearchType('oem');
+      setSearchQuery(initialOem);
+      performSearch(initialOem, 'oem');
+    } else if (initialQuery) {
+      setSearchType('article');
       setSearchQuery(initialQuery);
-      performSearch(initialQuery);
+      performSearch(initialQuery, 'article');
     }
-  }, [initialQuery]);
+  }, [initialQuery, initialOem]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setSearchParams({ query: searchQuery });
-    performSearch(searchQuery);
+    const paramKey = searchType === 'oem' ? 'oem' : 'query';
+    setSearchParams({ [paramKey]: searchQuery });
+    performSearch(searchQuery, searchType);
   };
 
   const handleClear = () => {
     setSearchQuery('');
     setSearchResults([]);
+    setArticlesFound([]);
     setHasSearched(false);
     setTotal(0);
     setSearchParams({});
@@ -69,10 +91,33 @@ const SearchPage = () => {
     <div className="search-page">
       <div className="search-container">
         <div className="search-header">
-          <h1 className="search-title">Поиск по артикулу</h1>
+          <h1 className="search-title">
+            {searchType === 'oem' ? 'Поиск по OEM номеру' : 'Поиск по артикулу'}
+          </h1>
           <p className="search-subtitle">
-            Введите полный или частичный артикул запчасти для быстрого поиска
+            {searchType === 'oem' 
+              ? 'Введите заводской номер производителя (OEM) для поиска аналогов'
+              : 'Введите полный или частичный артикул запчасти для быстрого поиска'
+            }
           </p>
+        </div>
+
+        {/* Search Type Toggle */}
+        <div className="search-type-toggle">
+          <button
+            type="button"
+            className={`toggle-btn ${searchType === 'article' ? 'active' : ''}`}
+            onClick={() => setSearchType('article')}
+          >
+            По артикулу
+          </button>
+          <button
+            type="button"
+            className={`toggle-btn ${searchType === 'oem' ? 'active' : ''}`}
+            onClick={() => setSearchType('oem')}
+          >
+            По OEM
+          </button>
         </div>
 
         <form className="search-form-card" onSubmit={handleSearch}>
@@ -84,7 +129,11 @@ const SearchPage = () => {
             <input
               type="text"
               className="search-input-field"
-              placeholder="Например: SDOCT05-880, KARIO17, BME3405..."
+              placeholder={
+                searchType === 'oem'
+                  ? 'Например: 6001546685, 1248804070, 8200150625...'
+                  : 'Например: SDOCT05-880, KARIO17, BME3405...'
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               autoFocus
@@ -108,64 +157,25 @@ const SearchPage = () => {
           </button>
         </form>
 
-        {/* Search Examples */}
-        {!hasSearched && !loading && (
-          <div className="search-examples">
-            <p className="search-examples-title">Примеры поиска:</p>
-            <div className="search-examples-tags">
-              <button
-                type="button"
-                className="search-example-tag"
-                onClick={() => {
-                  setSearchQuery('SDOCT05');
-                  performSearch('SDOCT05');
-                  setSearchParams({ query: 'SDOCT05' });
-                }}
-              >
-                SDOCT05
-              </button>
-              <button
-                type="button"
-                className="search-example-tag"
-                onClick={() => {
-                  setSearchQuery('KARIO17-520');
-                  performSearch('KARIO17-520');
-                  setSearchParams({ query: 'KARIO17-520' });
-                }}
-              >
-                KARIO17-520
-              </button>
-              <button
-                type="button"
-                className="search-example-tag"
-                onClick={() => {
-                  setSearchQuery('BME3405');
-                  performSearch('BME3405');
-                  setSearchParams({ query: 'BME3405' });
-                }}
-              >
-                BME3405
-              </button>
-              <button
-                type="button"
-                className="search-example-tag"
-                onClick={() => {
-                  setSearchQuery('880');
-                  performSearch('880');
-                  setSearchParams({ query: '880' });
-                }}
-              >
-                880
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Loading State */}
         {loading && (
           <div className="search-loading">
             <div className="loading-spinner"></div>
             <p>Поиск товаров...</p>
+          </div>
+        )}
+
+        {/* OEM Articles Found Notice */}
+        {hasSearched && !loading && searchType === 'oem' && articlesFound.length > 0 && (
+          <div className="search-notice">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 16v-4"/>
+              <path d="M12 8h.01"/>
+            </svg>
+            <div>
+              <strong>Найдено аналогов:</strong> {articlesFound.join(', ')}
+            </div>
           </div>
         )}
 
@@ -210,6 +220,8 @@ const SearchPage = () => {
                 <h3 className="search-no-results-title">Ничего не найдено</h3>
                 <p className="search-no-results-text">
                   По запросу <strong>"{searchQuery}"</strong> товары не найдены.
+                  <br />
+                  {searchType === 'oem' && 'Попробуйте удалить дефисы и пробелы из номера.'}
                   <br />
                   Попробуйте изменить запрос или используйте каталог.
                 </p>

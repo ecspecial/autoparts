@@ -6,9 +6,10 @@ import { ProductsService } from './products.service';
 import { CsvImportService } from './services/csv-import.service';
 import { CategoriesCacheService } from './services/categories-cache.service';
 import { ProductsSyncService } from './services/products-sync.service';
+import { CrossReferenceModule } from '../cross-reference/cross-reference.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product])],
+  imports: [TypeOrmModule.forFeature([Product]), CrossReferenceModule],
   controllers: [ProductsController],
   providers: [
     ProductsService,

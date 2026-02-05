@@ -2,12 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
+import { CrossCsvImportService } from '../cross-reference/services/cross-csv-import.service';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
+    private crossCsvImportService: CrossCsvImportService,
   ) {}
 
   // Add this new method
@@ -21,6 +23,27 @@ export class ProductsService {
     }
 
     return product;
+  }
+
+  async searchByOem(
+    oemInput: string,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{ products: Product[]; total: number; articlesFound: string[] }> {
+    const articles = await this.crossCsvImportService.findArticlesByOem(oemInput);
+  
+    if (articles.length === 0) {
+      return { products: [], total: 0, articlesFound: [] };
+    }
+  
+    // Use productRepository (not productsRepository)
+    const [products, total] = await this.productRepository.findAndCount({
+      where: articles.map(article => ({ article })),
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+  
+    return { products, total, articlesFound: articles };
   }
 
   async search(filters: {

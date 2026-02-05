@@ -8,6 +8,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
 import { CartModule } from './modules/cart/cart.module';
+import { CrossReferenceModule } from './modules/cross-reference/cross-reference.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { CartModule } from './modules/cart/cart.module';
     UsersModule,
     ProductsModule,
     CartModule,
+    CrossReferenceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

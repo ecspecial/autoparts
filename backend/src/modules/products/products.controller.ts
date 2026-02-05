@@ -59,6 +59,19 @@ async searchProducts(
   });
 }
 
+@Get('search-by-oem')
+@ApiOperation({ summary: 'Search products by OEM/manufacturer article number' })
+@ApiQuery({ name: 'oem', required: true, description: 'OEM article number (e.g., 6001546685)' })
+@ApiQuery({ name: 'page', required: false, type: Number })
+@ApiQuery({ name: 'limit', required: false, type: Number })
+async searchByOem(
+  @Query('oem') oem: string,
+  @Query('page') page: number = 1,
+  @Query('limit') limit: number = 20,
+) {
+  return this.productsService.searchByOem(oem, page, limit);
+}
+
   @Get(':id')  // ← 4. GET /products/:id (dynamic - MUST BE LAST!)
   @ApiOperation({ summary: 'Получить информацию о товаре по ID' })
   @ApiParam({ name: 'id', type: 'number', description: 'ID товара' })

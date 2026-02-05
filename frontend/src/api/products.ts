@@ -42,6 +42,12 @@ export interface SearchFilters {
   limit?: number;
 }
 
+export interface OemSearchResponse {
+  products: Product[];
+  total: number;
+  articlesFound: string[];
+}
+
 export const productsApi = {
   // Get categories hierarchy
   getCategories: async (): Promise<CategoriesResponse> => {
@@ -49,7 +55,7 @@ export const productsApi = {
     return response.data;
   },
 
-  // ← ADD THIS: Get single product by ID
+  // Get single product by ID
   getProduct: async (id: number): Promise<Product> => {
     const response = await apiClient.get<Product>(`/products/${id}`);
     return response.data;
@@ -59,6 +65,12 @@ export const productsApi = {
   searchProducts: async (filters: SearchFilters = {}): Promise<ProductsResponse> => {
     const response = await apiClient.get<ProductsResponse>('/products/search', {
       params: filters,
+    });
+    return response.data;
+  },
+  searchByOem: async (oem: string, page: number = 1, limit: number = 20): Promise<OemSearchResponse> => {
+    const response = await apiClient.get<OemSearchResponse>('/products/search-by-oem', {
+      params: { oem, page, limit },
     });
     return response.data;
   },
