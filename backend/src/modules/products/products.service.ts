@@ -112,6 +112,49 @@ export class ProductsService {
     };
   }
 
+  async unifiedSearch(
+    query: string,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{ products: Product[]; total: number; articlesFound: string[] }> {
+    const normalizedQuery = this.normalizeForSearch(query);
+  
+    // 1. Search cross-reference table by OEM (may return 0 results)
+    const oemArticles = await this.crossCsvImportService.findArticlesByOem(query);
+  
+    // 2. Build unified query: article LIKE match OR exact OEM-matched articles
+    const qb = this.productRepository.createQueryBuilder('product');
+  
+    if (oemArticles.length > 0) {
+      // Search by normalized article OR by OEM-matched articles
+      qb.where(
+        "UPPER(REGEXP_REPLACE(product.article, '[^A-ZА-Я0-9]', '', 'gi')) LIKE :article",
+        { article: `%${normalizedQuery}%` },
+      ).orWhere('product.article IN (:...oemArticles)', { oemArticles });
+    } else {
+      // Only search by article
+      qb.where(
+        "UPPER(REGEXP_REPLACE(product.article, '[^A-ZА-Я0-9]', '', 'gi')) LIKE :article",
+        { article: `%${normalizedQuery}%` },
+      );
+    }
+  
+    const [allProducts, total] = await qb
+      .orderBy('product.marka', 'ASC')
+      .addOrderBy('product.model', 'ASC')
+      .getManyAndCount();
+  
+    // 3. Paginate manually (since we need total from combined query)
+    const paginated = allProducts.slice((page - 1) * limit, page * limit);
+  
+    // 4. Only report OEM articles that actually exist in results
+    const foundOemArticles = oemArticles.length > 0
+      ? [...new Set(allProducts.filter(p => oemArticles.includes(p.article)).map(p => p.article))]
+      : [];
+  
+    return { products: paginated, total, articlesFound: foundOemArticles };
+  }
+
   // Вспомогательный метод нормализации
   private normalizeForSearch(input: string): string {
     return input

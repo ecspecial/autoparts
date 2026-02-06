@@ -80,4 +80,18 @@ async searchByOem(
   async getProduct(@Param('id', ParseIntPipe) id: number) {
     return this.productsService.findById(id);
   }
+
+  @Get('unified-search')
+  @ApiOperation({ summary: 'Unified search by article and OEM simultaneously' })
+  @ApiQuery({ name: 'q', required: true, description: 'Search query (article or OEM number)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async unifiedSearch(
+  @Query('q') q: string,
+  @Query('page') page: number = 1,
+  @Query('limit') limit: number = 20,
+  ) {
+  return this.productsService.unifiedSearch(q, page, limit);
+  }
+
 }

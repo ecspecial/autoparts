@@ -7,6 +7,7 @@ export interface CategoriesCache {
   brands: string[];
   modelsByBrand: Record<string, string[]>;
   generationsByModel: Record<string, string[]>;
+  partTypes: string[];
 }
 
 @Injectable()
@@ -93,10 +94,21 @@ export class CategoriesCacheService {
       }
     });
 
+    const partTypesResult = await this.productRepository
+      .createQueryBuilder('product')
+      .select('DISTINCT product.name', 'name')
+      .where('product.name IS NOT NULL')
+      .andWhere("product.name != ''")
+      .orderBy('product.name', 'ASC')
+      .getRawMany();
+
+    const partTypes = partTypesResult.map(r => r.name);
+
     this.cache = {
       brands,
       modelsByBrand,
       generationsByModel,
+      partTypes,
     };
 
     this.logger.log(`Cache rebuilt: ${brands.length} brands, ${Object.keys(modelsByBrand).length} brand-model pairs, ${Object.keys(generationsByModel).length} model-generation pairs`);

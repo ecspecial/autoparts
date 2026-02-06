@@ -15,6 +15,7 @@ export default function CatalogPage() {
   const [selectedMarka, setSelectedMarka] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [selectedGeneration, setSelectedGeneration] = useState<string>('');
+  const [selectedPartType, setSelectedPartType] = useState<string>('');
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -37,7 +38,7 @@ export default function CatalogPage() {
   // Load products when filters or page change
   useEffect(() => {
     loadProducts();
-  }, [selectedMarka, selectedModel, selectedGeneration, currentPage, nameKeyword]);
+  }, [selectedMarka, selectedModel, selectedGeneration, selectedPartType, currentPage, nameKeyword]);
 
   const loadCategories = async () => {
     try {
@@ -58,7 +59,7 @@ export default function CatalogPage() {
         marka: selectedMarka || undefined,
         model: selectedModel || undefined,
         generation: selectedGeneration || undefined,
-        nameKeyword: nameKeyword || undefined,
+        nameKeyword: selectedPartType || nameKeyword || undefined, 
         page: currentPage,
         limit,
       });
@@ -95,11 +96,17 @@ export default function CatalogPage() {
     setCurrentPage(1);
   };
 
+  const handlePartTypeChange = (partType: string) => {
+    setSelectedPartType(partType);
+    setCurrentPage(1);
+  };
+
   // Reset all filters
   const resetFilters = () => {
     setSelectedMarka('');
     setSelectedModel('');
     setSelectedGeneration('');
+    setSelectedPartType('');
     setCurrentPage(1);
     navigate('/catalog', { replace: true });
   };
@@ -150,43 +157,27 @@ export default function CatalogPage() {
         </div>
 
         {/* Search Section */}
-<div className="catalog-search-section">
-  <h3 className="catalog-search-title">Поиск товаров</h3>
-  
-  <div className="catalog-search-tabs">
-    <button
-      type="button"
-      className={`catalog-search-tab ${searchType === 'article' ? 'active' : ''}`}
-      onClick={() => setSearchType('article')}
-    >
-      По артикулу
-    </button>
-    <button
-      type="button"
-      className={`catalog-search-tab ${searchType === 'oem' ? 'active' : ''}`}
-      onClick={() => setSearchType('oem')}
-    >
-      По OEM
-    </button>
-  </div>
-
-  <form onSubmit={handleSearch} className="catalog-search-form">
-    <input
-      type="text"
-      className="catalog-search-input"
-      placeholder={
-        searchType === 'article'
-          ? 'Введите артикул (например: KARIO17-520)'
-          : 'Введите OEM номер (например: 6001546685)'
-      }
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-    />
-    <button type="submit" className="catalog-search-button">
-      Найти
-    </button>
-  </form>
-</div>
+        {/* Search Section */}
+        <div className="catalog-search-section">
+        <h3 className="catalog-search-title">Поиск товаров</h3>
+        <form onSubmit={(e) => {
+            e.preventDefault();
+            if (searchQuery.trim()) {
+            navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+            }
+        }} className="catalog-search-form">
+            <input
+            type="text"
+            className="catalog-search-input"
+            placeholder="Введите артикул или OEM номер"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <button type="submit" className="catalog-search-button">
+            Найти
+            </button>
+        </form>
+        </div>
 
       {/* Filters */}
       <div className="catalog-filters">
@@ -244,10 +235,28 @@ export default function CatalogPage() {
           </select>
         </div>
 
-        {(selectedMarka || selectedModel || selectedGeneration) && (
-          <button className="reset-filters-btn" onClick={resetFilters}>
+        <div className="filter-group">
+        <label htmlFor="part-type-select">Тип запчасти:</label>
+        <select
+            id="part-type-select"
+            className="filter-select"
+            value={selectedPartType}
+            onChange={(e) => handlePartTypeChange(e.target.value)}
+            disabled={!categories}
+        >
+            <option value="">Все типы</option>
+            {categories?.partTypes.map((type) => (
+            <option key={type} value={type}>
+                {type}
+            </option>
+            ))}
+        </select>
+        </div>
+
+        {(selectedMarka || selectedModel || selectedGeneration || selectedPartType) && (
+        <button className="reset-filters-btn" onClick={resetFilters}>
             Сбросить фильтры
-          </button>
+        </button>
         )}
       </div>
 
@@ -260,7 +269,7 @@ export default function CatalogPage() {
       ) : products.length === 0 ? (
         <div className="catalog-empty">
           <p>Товары не найдены</p>
-          {(selectedMarka || selectedModel || selectedGeneration) && (
+          {(selectedMarka || selectedModel || selectedGeneration || selectedPartType) && (
             <button className="reset-filters-btn" onClick={resetFilters}>
               Сбросить фильтры
             </button>

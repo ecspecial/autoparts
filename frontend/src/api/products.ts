@@ -30,6 +30,7 @@ export interface CategoriesResponse {
   brands: string[];
   modelsByBrand: Record<string, string[]>;
   generationsByModel: Record<string, string[]>;
+  partTypes: string[];
 }
 
 export interface SearchFilters {
@@ -47,6 +48,12 @@ export interface OemSearchResponse {
   total: number;
   articlesFound: string[];
 }
+
+export interface UnifiedSearchResponse {
+    products: Product[];
+    total: number;
+    articlesFound: string[];
+  }
 
 export const productsApi = {
   // Get categories hierarchy
@@ -71,6 +78,12 @@ export const productsApi = {
   searchByOem: async (oem: string, page: number = 1, limit: number = 20): Promise<OemSearchResponse> => {
     const response = await apiClient.get<OemSearchResponse>('/products/search-by-oem', {
       params: { oem, page, limit },
+    });
+    return response.data;
+  },
+  unifiedSearch: async (q: string, page: number = 1, limit: number = 20): Promise<UnifiedSearchResponse> => {
+    const response = await apiClient.get<UnifiedSearchResponse>('/products/unified-search', {
+      params: { q, page, limit },
     });
     return response.data;
   },
