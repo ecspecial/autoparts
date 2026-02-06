@@ -58,11 +58,11 @@ input {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
+  }
 
 main {
   flex: 1;
-}
+  }
 
 /* Prevent iPhone zoom on input focus */
 @media (max-width: 640px) {

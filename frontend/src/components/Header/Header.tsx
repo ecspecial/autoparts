@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import CarIcon from '../icons/CarIcon';
 import './Header.css';
-import { useCart } from '../../context/CartContext';  // ← Add at top
+import { useCart } from '../../context/CartContext';
 
 
 const Header = () => {
@@ -29,24 +28,20 @@ const Header = () => {
   return (
     <header className="header">
       <div className="header-container">
-        <Link to="/" className="header-logo" onClick={closeMobileMenu}>
-          <CarIcon className="header-logo-svg" width={40} height={40} />
-          <span className="header-logo-text">AutoParts</span>
-        </Link>
+      <Link to="/" className="header-logo" onClick={closeMobileMenu}>
+        <img src="/logo-image.png" alt="Forward Autoparts" className="header-logo-img" />
+      </Link>
         
         {/* Desktop Navigation */}
         <nav className="header-nav">
           <Link to="/catalog" className={`header-nav-link ${location.pathname.startsWith('/catalog') || location.pathname.startsWith('/product') ? 'active' : ''}`}>
             Каталог
           </Link>
-          <Link to="/about" className={`header-nav-link ${location.pathname === '/about' ? 'active' : ''}`}>
-            О компании
-          </Link>
-          <Link to="/contacts" className={`header-nav-link ${location.pathname === '/contacts' ? 'active' : ''}`}>
-            Контакты
-          </Link>
           <Link to="/downloads" className={`header-nav-link ${location.pathname === '/downloads' ? 'active' : ''}`} onClick={closeMobileMenu}>
             Прайс-лист
+          </Link>
+          <Link to="/warranty" className={`header-nav-link ${location.pathname === '/warranty' ? 'active' : ''}`}>
+            Гарантия и возврат
           </Link>
           
           {/* Auth-based navigation */}
@@ -62,7 +57,7 @@ const Header = () => {
                     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
                 </svg>
                 Корзина
-                {itemCount > 0 && <span className="cart-count">{itemCount}</span>}  {/* ← Add badge */}
+                {itemCount > 0 && <span className="cart-count">{itemCount}</span>}
               </Link>
               <button onClick={logout} className="header-logout-button">
                 Выход
@@ -97,14 +92,11 @@ const Header = () => {
         <Link to="/catalog" className={`mobile-menu-link ${location.pathname.startsWith('/catalog') || location.pathname.startsWith('/product') ? 'active' : ''}`} onClick={closeMobileMenu}>
           Каталог
         </Link>
-        <Link to="/about" className={`mobile-menu-link ${location.pathname === '/about' ? 'active' : ''}`} onClick={closeMobileMenu}>
-          О компании
-        </Link>
-        <Link to="/contacts" className={`mobile-menu-link ${location.pathname === '/contacts' ? 'active' : ''}`} onClick={closeMobileMenu}>
-          Контакты
-        </Link>
         <Link to="/downloads" className={`mobile-menu-link ${location.pathname === '/downloads' ? 'active' : ''}`} onClick={closeMobileMenu}>
           Прайс-лист
+        </Link>
+        <Link to="/warranty" className={`mobile-menu-link ${location.pathname === '/warranty' ? 'active' : ''}`} onClick={closeMobileMenu}>
+          Гарантия и возврат
         </Link>
         
         {/* Auth-based mobile navigation */}

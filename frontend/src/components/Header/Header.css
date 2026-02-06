@@ -306,4 +306,10 @@
       font-size: 1rem;
       padding: 0.75rem 1.5rem;
     }
+    
+    .header-logo-img {
+        height: 36px;
+        width: auto;
+        object-fit: contain;
+      }
   }
