@@ -146,7 +146,7 @@ const SearchPage = () => {
                       key={product.id}
                       id={product.id}
                       article={product.article}
-                      name={product.fullName}
+                      name={product.name}
                       price={parseFloat(product.price)}
                       quantity={product.quantity}
                       brand={product.marka}

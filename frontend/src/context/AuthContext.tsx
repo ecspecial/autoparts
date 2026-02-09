@@ -1,11 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authApi } from '../api/auth';
-import type { AuthResponse } from '../api/auth';
+import type { AuthResponse, RegisterData } from '../api/auth';
 
 interface User {
   id: number;
   login: string;
   discount: number;
+  balance: number;
+  isActive: boolean;
+  entityType: string;
+  fullName: string;
+  phone: string;
+  email: string;
   createdAt: string;
 }
 
@@ -14,8 +20,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (login: string, password: string) => Promise<void>;
-  register: (login: string, password: string, discount?: number) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
   logout: () => void;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,7 +31,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Загружаем пользователя из localStorage при монтировании компонента
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const storedToken = localStorage.getItem('access_token');
@@ -57,13 +63,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (login: string, password: string, discount?: number) => {
+  const register = async (data: RegisterData) => {
     try {
-      const response = await authApi.register({ login, password, discount });
+      const response = await authApi.register(data);
       handleAuthResponse(response);
     } catch (error: any) {
       const message = error.response?.data?.message || 'Ошибка регистрации';
       throw new Error(message);
+    }
+  };
+
+  const refreshProfile = async () => {
+    try {
+      const profile = await authApi.getProfile();
+      const updatedUser: User = {
+        id: profile.id,
+        login: profile.login,
+        discount: profile.discount,
+        balance: profile.balance,
+        isActive: profile.isActive,
+        entityType: profile.entityType,
+        fullName: profile.fullName,
+        phone: profile.phone,
+        email: profile.email,
+        createdAt: profile.createdAt,
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+    } catch (error) {
+      console.error('Failed to refresh profile:', error);
     }
   };
 
@@ -82,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         register,
         logout,
+        refreshProfile,
       }}
     >
       {children}

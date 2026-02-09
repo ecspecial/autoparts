@@ -22,7 +22,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user) {
       throw new UnauthorizedException();
     }
-    // Change 'userId' to 'id' to match controller expectations
-    return { id: payload.sub, login: payload.login, discount: payload.discount };  // ← Changed userId to id
+    return { id: payload.sub, login: payload.login };
   }
 }

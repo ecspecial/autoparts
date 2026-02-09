@@ -1,49 +1,65 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';  // ← Add OnModuleInit
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { CsvImportService } from './csv-import.service';
 import { CategoriesCacheService } from './categories-cache.service';
+import { CrossCsvImportService } from '../../cross-reference/services/cross-csv-import.service';
+import { DeliveryService } from '../../delivery/delivery.service';
 
 @Injectable()
-export class ProductsSyncService implements OnModuleInit {  // ← Implement OnModuleInit
+export class ProductsSyncService implements OnModuleInit {
   private readonly logger = new Logger(ProductsSyncService.name);
 
   constructor(
     private csvImportService: CsvImportService,
     private categoriesCache: CategoriesCacheService,
+    private crossCsvImportService: CrossCsvImportService,
+    private deliveryService: DeliveryService,
     private configService: ConfigService,
   ) {}
 
-  // ← ADD THIS: Runs once on app startup
   async onModuleInit() {
-    this.logger.log('🚀 Running initial CSV import on startup...');
+    this.logger.log('🚀 Running initial sync on startup...');
     try {
-      await this.syncProducts();
-      this.logger.log('✅ Initial import completed successfully');
+      await this.syncAll();
+      this.logger.log('✅ Initial sync completed successfully');
     } catch (error) {
-      this.logger.error('❌ Failed to run initial import on startup', error);
-      // Don't throw - allow app to start even if import fails
+      this.logger.error('❌ Failed to run initial sync on startup', error);
     }
   }
 
   @Cron('*/30 * * * *') // Every 30 minutes
-  async syncProducts() {
-    const interval = this.configService.get<number>('CSV_IMPORT_INTERVAL_MINUTES', 30);
-    this.logger.log(`Starting scheduled product sync (interval: ${interval} minutes)`);
+  async syncAll() {
+    this.logger.log('Starting scheduled sync...');
 
+    // 1. Products
     try {
       const count = await this.csvImportService.importFromCsv();
       await this.categoriesCache.rebuildCache();
-      this.logger.log(`✅ Sync completed: ${count} products imported and cache rebuilt`);
+      this.logger.log(`✅ Products sync: ${count} products imported, cache rebuilt`);
     } catch (error) {
       this.logger.error('❌ Failed to sync products', error);
-      throw error;  // Re-throw for manual calls
+    }
+
+    // 2. Cross-reference
+    try {
+      const crossResult = await this.crossCsvImportService.importFromCsv();
+      this.logger.log(`✅ Cross-reference sync: ${crossResult.imported} records`);
+    } catch (error) {
+      this.logger.error('❌ Failed to sync cross-reference', error);
+    }
+
+    // 3. Delivery methods
+    try {
+      const deliveryResult = await this.deliveryService.importFromCsv();
+      this.logger.log(`✅ Delivery sync: ${deliveryResult.imported} methods`);
+    } catch (error) {
+      this.logger.error('❌ Failed to sync delivery methods', error);
     }
   }
 
-  // Manual trigger for testing (optional - keep it)
   async triggerManualSync() {
     this.logger.log('🔧 Manual sync triggered');
-    return this.syncProducts();
+    return this.syncAll();
   }
 }
