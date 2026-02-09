@@ -14,6 +14,7 @@ export interface Product {
   wildberriesUrl: string | null;
   name: string;
   oem: string | null;
+  type: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -39,6 +40,7 @@ export interface SearchFilters {
   generation?: string;
   article?: string;
   nameKeyword?: string;
+  type?: string;
   page?: number;
   limit?: number;
 }
@@ -59,6 +61,14 @@ export const productsApi = {
   // Get categories hierarchy
   getCategories: async (): Promise<CategoriesResponse> => {
     const response = await apiClient.get<CategoriesResponse>('/products/categories');
+    return response.data;
+  },
+
+  // Get available part types based on current filters (dynamic)
+  getAvailableTypes: async (filters: { marka?: string; model?: string; generation?: string } = {}): Promise<string[]> => {
+    const response = await apiClient.get<string[]>('/products/available-types', {
+      params: filters,
+    });
     return response.data;
   },
 

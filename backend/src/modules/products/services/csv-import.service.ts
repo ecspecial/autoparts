@@ -36,7 +36,7 @@ export class CsvImportService {
       fs.createReadStream(csvPath, { encoding: 'utf8' })
         .pipe(csv({  // ← Now works as default import
           separator: ';',
-          headers: ['art', 'price', 'quantity', 'brand', 'full_name', 'marka', 'model', 'generation', 'ozon', 'wildberries', 'name', 'oem'],
+          headers: ['art', 'price', 'quantity', 'brand', 'full_name', 'marka', 'model', 'generation', 'ozon', 'wildberries', 'name', 'oem', 'type'],
           skipLines: 1,
         }))
         .on('data', (row) => {
@@ -55,6 +55,7 @@ export class CsvImportService {
             wildberriesUrl: row.wildberries?.trim() || null,
             name: row.name?.trim() || '',
             oem: row.oem?.trim() || null,
+            type: row.type?.trim() || null,
           });
         })
         .on('end', async () => {

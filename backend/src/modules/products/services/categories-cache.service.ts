@@ -96,13 +96,13 @@ export class CategoriesCacheService {
 
     const partTypesResult = await this.productRepository
       .createQueryBuilder('product')
-      .select('DISTINCT product.name', 'name')
-      .where('product.name IS NOT NULL')
-      .andWhere("product.name != ''")
-      .orderBy('product.name', 'ASC')
+      .select('DISTINCT product.type', 'type')
+      .where('product.type IS NOT NULL')
+      .andWhere("product.type != ''")
+      .orderBy('product.type', 'ASC')
       .getRawMany();
 
-    const partTypes = partTypesResult.map(r => r.name);
+    const partTypes = partTypesResult.map(r => r.type);
 
     this.cache = {
       brands,

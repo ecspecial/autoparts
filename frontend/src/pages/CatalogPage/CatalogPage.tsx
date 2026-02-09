@@ -17,6 +17,10 @@ export default function CatalogPage() {
   const [selectedGeneration, setSelectedGeneration] = useState<string>('');
   const [selectedPartType, setSelectedPartType] = useState<string>('');
   
+  // Dynamic part types based on current filters
+  const [availablePartTypes, setAvailablePartTypes] = useState<string[]>([]);
+  const [loadingTypes, setLoadingTypes] = useState(false);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -27,13 +31,17 @@ export default function CatalogPage() {
   const nameKeyword = searchParams.get('nameKeyword') || '';
   const navigate = useNavigate();
 
-  const [searchType, setSearchType] = useState<'article' | 'oem'>('article');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Load categories on mount
   useEffect(() => {
     loadCategories();
   }, []);
+
+  // Load available part types when marka/model/generation change
+  useEffect(() => {
+    loadAvailableTypes();
+  }, [selectedMarka, selectedModel, selectedGeneration]);
 
   // Load products when filters or page change
   useEffect(() => {
@@ -50,6 +58,26 @@ export default function CatalogPage() {
     }
   };
 
+  const loadAvailableTypes = async () => {
+    setLoadingTypes(true);
+    try {
+      const types = await productsApi.getAvailableTypes({
+        marka: selectedMarka || undefined,
+        model: selectedModel || undefined,
+        generation: selectedGeneration || undefined,
+      });
+      setAvailablePartTypes(types);
+      // If currently selected type is no longer available, reset it
+      if (selectedPartType && !types.includes(selectedPartType)) {
+        setSelectedPartType('');
+      }
+    } catch (err) {
+      console.error('Failed to load available types:', err);
+    } finally {
+      setLoadingTypes(false);
+    }
+  };
+
   const loadProducts = async () => {
     setLoading(true);
     setError(null);
@@ -59,7 +87,8 @@ export default function CatalogPage() {
         marka: selectedMarka || undefined,
         model: selectedModel || undefined,
         generation: selectedGeneration || undefined,
-        nameKeyword: selectedPartType || nameKeyword || undefined, 
+        type: selectedPartType || undefined,
+        nameKeyword: nameKeyword || undefined, 
         page: currentPage,
         limit,
       });
@@ -78,21 +107,24 @@ export default function CatalogPage() {
   // Handle brand selection
   const handleMarkaChange = (marka: string) => {
     setSelectedMarka(marka);
-    setSelectedModel(''); // Reset model
-    setSelectedGeneration(''); // Reset generation
-    setCurrentPage(1); // Reset to first page
+    setSelectedModel('');
+    setSelectedGeneration('');
+    setSelectedPartType('');
+    setCurrentPage(1);
   };
 
   // Handle model selection
   const handleModelChange = (model: string) => {
     setSelectedModel(model);
-    setSelectedGeneration(''); // Reset generation
+    setSelectedGeneration('');
+    setSelectedPartType('');
     setCurrentPage(1);
   };
 
   // Handle generation selection
   const handleGenerationChange = (generation: string) => {
     setSelectedGeneration(generation);
+    setSelectedPartType('');
     setCurrentPage(1);
   };
 
@@ -109,14 +141,6 @@ export default function CatalogPage() {
     setSelectedPartType('');
     setCurrentPage(1);
     navigate('/catalog', { replace: true });
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      const type = searchType === 'oem' ? 'oem' : 'query';
-      navigate(`/search?${type}=${encodeURIComponent(searchQuery.trim())}`);
-    }
   };
 
   // Get available models for selected brand
@@ -156,7 +180,6 @@ export default function CatalogPage() {
             </p>
         </div>
 
-        {/* Search Section */}
         {/* Search Section */}
         <div className="catalog-search-section">
         <h3 className="catalog-search-title">Поиск товаров</h3>
@@ -236,21 +259,21 @@ export default function CatalogPage() {
         </div>
 
         <div className="filter-group">
-        <label htmlFor="part-type-select">Тип запчасти:</label>
-        <select
+          <label htmlFor="part-type-select">Тип запчасти:</label>
+          <select
             id="part-type-select"
             className="filter-select"
             value={selectedPartType}
             onChange={(e) => handlePartTypeChange(e.target.value)}
-            disabled={!categories}
-        >
-            <option value="">Все типы</option>
-            {categories?.partTypes.map((type) => (
-            <option key={type} value={type}>
+            disabled={loadingTypes || availablePartTypes.length === 0}
+          >
+            <option value="">Все типы{availablePartTypes.length > 0 ? ` (${availablePartTypes.length})` : ''}</option>
+            {availablePartTypes.map((type) => (
+              <option key={type} value={type}>
                 {type}
-            </option>
+              </option>
             ))}
-        </select>
+          </select>
         </div>
 
         {(selectedMarka || selectedModel || selectedGeneration || selectedPartType) && (

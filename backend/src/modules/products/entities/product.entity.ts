@@ -1,5 +1,4 @@
 import { Entity, Column, PrimaryGeneratedColumn, UpdateDateColumn, CreateDateColumn } from 'typeorm';
-//                                                  ^^^^^^^^^^^^^^^^ (fix this)
 
 @Entity('products')
 export class Product {
@@ -42,9 +41,12 @@ export class Product {
   @Column({ length: 100, nullable: true })
   oem: string;
 
+  @Column({ length: 150, nullable: true })
+  type: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn()  // ← Fixed from UpdateColumn
+  @UpdateDateColumn()
   updatedAt: Date;
 }
