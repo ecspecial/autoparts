@@ -19,6 +19,7 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -35,6 +36,7 @@ const ProfilePage = () => {
       ]);
       setProfile(profileData);
       setDeliveryMethods(methods);
+      setDeliveryAddress(profileData.deliveryAddress || '');
 
       // Use user's preferred delivery, or default to САМОВЫВОЗ НАЛ
       if (profileData.preferredDelivery) {
@@ -53,27 +55,28 @@ const ProfilePage = () => {
 
   const handleSaveDelivery = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDelivery) return;
-
-    // Validate delivery code exists in loaded methods
-    const valid = deliveryMethods.some(m => m.code1c === selectedDelivery);
-    if (!valid) {
-      setSaveMessage('Выбранный способ доставки недоступен');
-      setTimeout(() => setSaveMessage(''), 3000);
-      return;
-    }
-
     setSaving(true);
     setSaveMessage('');
     try {
-      await authApi.updateDelivery(selectedDelivery);
+      const deliveryMethod = deliveryMethods.find(m => m.code1c === selectedDelivery);
+      
+      // Update delivery method
+      await authApi.updateDelivery(selectedDelivery, deliveryMethod?.name || '');
+      
+      // Update delivery address (if not САМОВЫВОЗ)
+      if (deliveryMethod && !deliveryMethod.name.includes('САМОВЫВОЗ')) {
+        await authApi.updateDeliveryAddress(deliveryAddress || null);
+      } else {
+        // Clear address if САМОВЫВОЗ
+        await authApi.updateDeliveryAddress(null);
+      }
+      
       await refreshProfile();
-      setSaveMessage('Способ доставки сохранен');
+      setSaveMessage('Данные доставки сохранены');
       setTimeout(() => setSaveMessage(''), 3000);
     } catch (error) {
       console.error('Failed to save delivery:', error);
       setSaveMessage('Ошибка сохранения');
-      setTimeout(() => setSaveMessage(''), 3000);
     } finally {
       setSaving(false);
     }
@@ -169,6 +172,7 @@ const ProfilePage = () => {
                       </div>
                     </div>
 
+                    {/* Right column */}
                     <div className="profile-form-column">
                       <div className="profile-form-group">
                         <label className="profile-form-label">Баланс</label>
@@ -201,19 +205,39 @@ const ProfilePage = () => {
                         <select
                           className="profile-form-select"
                           value={selectedDelivery}
-                          onChange={(e) => setSelectedDelivery(e.target.value)}
+                          onChange={(e) => {
+                            const newCode = e.target.value;
+                            const method = deliveryMethods.find(m => m.code1c === newCode);
+                            setSelectedDelivery(newCode);
+                            
+                            // If САМОВЫВОЗ selected, clear address
+                            if (method && method.name.includes('САМОВЫВОЗ')) {
+                              setDeliveryAddress('');
+                            }
+                          }}
                         >
-                          {deliveryMethods.length === 0 ? (
-                            <option value="">Загрузка...</option>
-                          ) : (
-                            deliveryMethods.map((m) => (
-                              <option key={m.id} value={m.code1c}>
-                                {m.name}
-                              </option>
-                            ))
-                          )}
+                          <option value="">Не выбрано</option>
+                          {deliveryMethods.map((m) => (
+                            <option key={m.id} value={m.code1c}>
+                              {m.name}
+                            </option>
+                          ))}
                         </select>
                       </div>
+
+                      {/* Delivery Address - only show if NOT САМОВЫВОЗ */}
+                      {selectedDelivery && !deliveryMethods.find(m => m.code1c === selectedDelivery)?.name.includes('САМОВЫВОЗ') && (
+                        <div className="profile-form-group">
+                          <label className="profile-form-label">Адрес доставки</label>
+                          <textarea
+                            className="profile-form-textarea"
+                            value={deliveryAddress}
+                            onChange={(e) => setDeliveryAddress(e.target.value)}
+                            placeholder="Введите адрес доставки"
+                            rows={3}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 

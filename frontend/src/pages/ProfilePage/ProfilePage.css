@@ -146,6 +146,30 @@
   padding-right: 3rem;
 }
 
+.profile-form-textarea {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    font-size: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    outline: none;
+    transition: all 0.2s;
+    font-family: inherit;
+    background-color: var(--white);
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 80px;
+  }
+  
+  .profile-form-textarea:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+  
+  .profile-form-textarea::placeholder {
+    color: var(--text-secondary);
+  }
+
 .profile-balance-display {
   padding: 1rem 1.25rem;
   font-size: 1.25rem;

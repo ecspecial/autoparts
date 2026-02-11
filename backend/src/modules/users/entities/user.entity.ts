@@ -43,6 +43,9 @@ import {
     @Column({ type: 'varchar', name: 'preferred_delivery', length: 200, nullable: true })
     preferredDelivery: string | null;
   
+    @Column({ name: 'delivery_address', type: 'text', nullable: true })
+    deliveryAddress: string | null;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
   }

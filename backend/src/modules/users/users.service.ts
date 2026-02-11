@@ -58,15 +58,31 @@ export class UsersService {
       isActive: user.isActive,
       clientNumber1c: user.clientNumber1c,
       preferredDelivery: user.preferredDelivery,
+      deliveryAddress: user.deliveryAddress,
       createdAt: user.createdAt,
     };
   }
 
   // Update delivery method by user
-  async updateDelivery(userId: number, deliveryCode: string): Promise<void> {
+  async updateDelivery(userId: number, deliveryCode: string, deliveryName?: string): Promise<void> {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('Пользователь не найден');
+    
     user.preferredDelivery = deliveryCode;
+    
+    // If delivery contains "САМОВЫВОЗ", clear address
+    if (deliveryName && deliveryName.includes('САМОВЫВОЗ')) {
+      user.deliveryAddress = null;
+    }
+    
+    await this.usersRepository.save(user);
+  }
+
+  async updateDeliveryAddress(userId: number, address: string | null): Promise<void> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    
+    user.deliveryAddress = address;
     await this.usersRepository.save(user);
   }
 

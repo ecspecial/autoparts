@@ -28,10 +28,22 @@ import {
     @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Обновить способ доставки пользователя' })
     async updateDelivery(
-      @Request() req,
-      @Body() body: { deliveryCode: string },
+    @Request() req,
+    @Body() body: { deliveryCode: string; deliveryName?: string },
     ) {
-      await this.usersService.updateDelivery(req.user.id, body.deliveryCode);
-      return { message: 'Способ доставки обновлен' };
+    await this.usersService.updateDelivery(req.user.id, body.deliveryCode, body.deliveryName);
+    return { message: 'Способ доставки обновлен' };
+    }
+
+    @Patch('delivery-address')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth('JWT-auth')
+    @ApiOperation({ summary: 'Обновить адрес доставки' })
+    async updateDeliveryAddress(
+    @Request() req,
+    @Body() body: { address: string | null },
+    ) {
+    await this.usersService.updateDeliveryAddress(req.user.id, body.address);
+    return { message: 'Адрес доставки обновлен' };
     }
   }

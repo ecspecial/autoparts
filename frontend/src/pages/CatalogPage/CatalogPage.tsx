@@ -277,9 +277,22 @@ export default function CatalogPage() {
         </div>
 
         {(selectedMarka || selectedModel || selectedGeneration || selectedPartType) && (
-        <button className="reset-filters-btn" onClick={resetFilters}>
-            Сбросить фильтры
-        </button>
+          <div className="filter-actions">
+            <button 
+              className="show-results-btn" 
+              onClick={() => {
+                const resultsElement = document.querySelector('.products-grid');
+                if (resultsElement) {
+                  resultsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+            >
+              Показать
+            </button>
+            <button className="reset-filters-btn" onClick={resetFilters}>
+              Сбросить фильтры
+            </button>
+          </div>
         )}
       </div>
 

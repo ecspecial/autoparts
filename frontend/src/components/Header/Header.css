@@ -21,7 +21,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    z-index: 110;
+    z-index: 97;
     transition: opacity 0.2s;
   }
     
@@ -144,7 +144,7 @@
     border: none;
     cursor: pointer;
     padding: 0;
-    z-index: 110;
+    z-index: 101;
   }
   
   .hamburger span {
