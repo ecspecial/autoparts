@@ -325,6 +325,7 @@ export default function CatalogPage() {
                 brand={product.marka}
                 model={product.model}
                 oem={product.oem}
+                lab={product.lab}
               />
             ))}
           </div>

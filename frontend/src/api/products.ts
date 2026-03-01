@@ -15,6 +15,7 @@ export interface Product {
   name: string;
   oem: string | null;
   type: string | null;
+  lab: string | null;
   createdAt: string;
   updatedAt: string;
 }

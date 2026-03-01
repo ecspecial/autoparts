@@ -13,6 +13,7 @@ interface ProductCardProps {
   brand?: string;
   model?: string;
   oem?: string | null;
+  lab?: string | null;
 }
 
 export default function ProductCard({ 
@@ -23,7 +24,8 @@ export default function ProductCard({
   quantity,
   brand,
   model,
-  oem 
+  oem,
+  lab
 }: ProductCardProps) {
   const { addToCart } = useCart();
   const [isAdding, setIsAdding] = useState(false);
@@ -105,7 +107,9 @@ export default function ProductCard({
                 alt={name}
                 onError={handleImageError}
                 />
-                {!inStock && <div className="out-of-stock-badge">Нет в наличии</div>}
+                {lab && (
+                    <div className="lab-badge">{lab}</div>
+                )}
             </div>
           
           <div className="product-card-content">
@@ -126,8 +130,8 @@ export default function ProductCard({
             
             <div className="product-card-footer">
               <div className="product-price">{price.toLocaleString('ru-RU')} ₽</div>
-              <div className={`product-stock ${inStock ? 'in-stock' : 'out-of-stock'}`}>
-                {inStock ? `В наличии: ${quantity} шт.` : 'Нет в наличии'}
+              <div className="product-stock in-stock">
+                В наличии: {quantity} шт.
               </div>
             </div>
           </div>
@@ -136,7 +140,7 @@ export default function ProductCard({
         <button 
           className="add-to-cart-btn"
           onClick={handleAddToCart}
-          disabled={!inStock || isAdding}
+          disabled={isAdding}
         >
           {isAdding ? (
             <>
@@ -144,7 +148,7 @@ export default function ProductCard({
               Добавление...
             </>
           ) : (
-            inStock ? 'В корзину' : 'Недоступно'
+            'В корзину'
           )}
         </button>
       </div>

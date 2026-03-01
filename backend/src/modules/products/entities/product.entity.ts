@@ -44,6 +44,9 @@ export class Product {
   @Column({ length: 150, nullable: true })
   type: string;
 
+  @Column({ length: 200, nullable: true })
+  lab: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
