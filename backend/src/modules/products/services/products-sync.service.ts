@@ -5,6 +5,7 @@ import { CsvImportService } from './csv-import.service';
 import { CategoriesCacheService } from './categories-cache.service';
 import { CrossCsvImportService } from '../../cross-reference/services/cross-csv-import.service';
 import { DeliveryService } from '../../delivery/delivery.service';
+import { NewsService } from '../../news/news.service';
 
 @Injectable()
 export class ProductsSyncService implements OnModuleInit {
@@ -15,6 +16,7 @@ export class ProductsSyncService implements OnModuleInit {
     private categoriesCache: CategoriesCacheService,
     private crossCsvImportService: CrossCsvImportService,
     private deliveryService: DeliveryService,
+    private newsService: NewsService,
     private configService: ConfigService,
   ) {}
 
@@ -28,7 +30,7 @@ export class ProductsSyncService implements OnModuleInit {
     }
   }
 
-  @Cron('*/30 * * * *') // Every 30 minutes
+  @Cron('*/30 * * * *')
   async syncAll() {
     this.logger.log('Starting scheduled sync...');
 
@@ -36,7 +38,7 @@ export class ProductsSyncService implements OnModuleInit {
     try {
       const count = await this.csvImportService.importFromCsv();
       await this.categoriesCache.rebuildCache();
-      this.logger.log(`✅ Products sync: ${count} products imported, cache rebuilt`);
+      this.logger.log(`✅ Products sync: ${count} products imported`);
     } catch (error) {
       this.logger.error('❌ Failed to sync products', error);
     }
@@ -55,6 +57,14 @@ export class ProductsSyncService implements OnModuleInit {
       this.logger.log(`✅ Delivery sync: ${deliveryResult.imported} methods`);
     } catch (error) {
       this.logger.error('❌ Failed to sync delivery methods', error);
+    }
+
+    // 4. News
+    try {
+      await this.newsService.reload();
+      this.logger.log('✅ News cache refreshed');
+    } catch (error) {
+      this.logger.error('❌ Failed to reload news', error);
     }
   }
 

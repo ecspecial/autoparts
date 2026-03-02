@@ -8,12 +8,14 @@ import { CategoriesCacheService } from './services/categories-cache.service';
 import { ProductsSyncService } from './services/products-sync.service';
 import { CrossReferenceModule } from '../cross-reference/cross-reference.module';
 import { DeliveryModule } from '../delivery/delivery.module';
+import { NewsModule } from '../news/news.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Product]),
     CrossReferenceModule,
     DeliveryModule,
+    NewsModule,
   ],
   controllers: [ProductsController],
   providers: [

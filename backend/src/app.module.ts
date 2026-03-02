@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ScheduleModule } from '@nestjs/schedule'; // ← ADD THIS
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
@@ -9,13 +9,12 @@ import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
 import { CartModule } from './modules/cart/cart.module';
 import { CrossReferenceModule } from './modules/cross-reference/cross-reference.module';
+import { DeliveryModule } from './modules/delivery/delivery.module';
+import { NewsModule } from './modules/news/news.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
-    }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -37,6 +36,8 @@ import { CrossReferenceModule } from './modules/cross-reference/cross-reference.
     ProductsModule,
     CartModule,
     CrossReferenceModule,
+    DeliveryModule,
+    NewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
