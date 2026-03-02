@@ -17,6 +17,7 @@ import PersonalDataPage from './pages/PersonalDataPage/PersonalDataPage';
 import AuthPage from './pages/AuthPage/AuthPage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 import DownloadsPage from './pages/DownloadsPage/DownloadsPage';
+import NewsPage from './pages/NewsPage/NewsPage';
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
                 <Route path="/personal-data" element={<PersonalDataPage />} />
                 <Route path="/login" element={<AuthPage />} />
                 <Route path="/downloads" element={<DownloadsPage />} />
+                <Route path="/news" element={<NewsPage />} />
                 <Route path="*" element={<NotFoundPage />} />
                 </Routes>
             </main>

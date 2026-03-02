@@ -1,0 +1,29 @@
+.news-page {
+    min-height: 100vh;
+    background-color: var(--bg-gray);
+    padding: 3rem 2rem 4rem;
+  }
+  
+  .news-page-container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  
+  .news-page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2rem;
+    letter-spacing: -0.02em;
+  }
+  
+  .news-page-loading,
+  .news-page-empty {
+    color: var(--text-secondary);
+    font-size: 1rem;
+  }
+  
+  @media (max-width: 768px) {
+    .news-page { padding: 2rem 1rem; }
+    .news-page-title { font-size: 1.5rem; }
+  }

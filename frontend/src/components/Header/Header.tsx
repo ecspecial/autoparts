@@ -40,6 +40,9 @@ const Header = () => {
           <Link to="/downloads" className={`header-nav-link ${location.pathname === '/downloads' ? 'active' : ''}`} onClick={closeMobileMenu}>
             Прайс-лист
           </Link>
+          <Link to="/news" className={`header-nav-link ${location.pathname === '/news' ? 'active' : ''}`}>
+            Новости
+          </Link>
           <Link to="/warranty" className={`header-nav-link ${location.pathname === '/warranty' ? 'active' : ''}`}>
             Гарантия и возврат
           </Link>
@@ -94,6 +97,9 @@ const Header = () => {
         </Link>
         <Link to="/downloads" className={`mobile-menu-link ${location.pathname === '/downloads' ? 'active' : ''}`} onClick={closeMobileMenu}>
           Прайс-лист
+        </Link>
+        <Link to="/news" className={`mobile-menu-link ${location.pathname === '/news' ? 'active' : ''}`} onClick={closeMobileMenu}>
+          Новости
         </Link>
         <Link to="/warranty" className={`mobile-menu-link ${location.pathname === '/warranty' ? 'active' : ''}`} onClick={closeMobileMenu}>
           Гарантия и возврат

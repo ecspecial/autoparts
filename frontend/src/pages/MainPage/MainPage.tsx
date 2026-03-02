@@ -3,6 +3,7 @@ import SearchSection from '../../components/SearchSection/SearchSection';
 import CategoryCard from '../../components/CategoryCard/CategoryCard';
 import { newsApi } from '../../api/news';
 import type { NewsItem } from '../../api/news';
+import { Link } from 'react-router-dom';
 import './MainPage.css';
 
 const HoodIcon = () => (
@@ -49,7 +50,7 @@ const MainPage = () => {
     <div className="main-page">
       <SearchSection />
 
-      {/* <section className="categories-section">
+      <section className="categories-section">
         <div className="categories-container">
           <h2 className="categories-title">Популярные категории</h2>
           <div className="categories-grid">
@@ -63,26 +64,24 @@ const MainPage = () => {
             ))}
           </div>
         </div>
-      </section> */}
+      </section>
 
-      {/* News Section */}
       {!newsLoading && news.length > 0 && (
         <section className="news-section">
           <div className="news-container">
-            <h2 className="news-title">Новости</h2>
-            <div className="news-list">
-              {news.map((item) => (
-                <article key={item.filename} className="news-card">
-                  {item.date && (
-                    <div className="news-date">{formatDate(item.date)}</div>
-                  )}
-                  <div
-                    className="news-content"
-                    dangerouslySetInnerHTML={{ __html: item.html }}
-                  />
-                </article>
-              ))}
+            <div className="news-header-row">
+              <h2 className="news-title">Новости</h2>
+              <Link to="/news" className="news-all-link">Все новости →</Link>
             </div>
+            <article className="news-card">
+              {news[0].date && (
+                <div className="news-date">{formatDate(news[0].date)}</div>
+              )}
+              <div
+                className="news-content"
+                dangerouslySetInnerHTML={{ __html: news[0].html }}
+              />
+            </article>
           </div>
         </section>
       )}

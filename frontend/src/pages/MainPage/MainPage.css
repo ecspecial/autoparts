@@ -154,3 +154,25 @@
     .news-title { font-size: 1.5rem; }
     .news-content h2 { font-size: 1.25rem; }
   }
+
+  .news-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+  }
+  
+  .news-header-row .news-title {
+    margin-bottom: 0;
+  }
+  
+  .news-all-link {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--primary-blue);
+    text-decoration: none;
+  }
+  
+  .news-all-link:hover {
+    text-decoration: underline;
+  }
