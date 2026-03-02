@@ -25,7 +25,7 @@ export default function ProductCard({
   brand,
   model,
   oem,
-  lab
+  lab,
 }: ProductCardProps) {
   const { addToCart } = useCart();
   const [isAdding, setIsAdding] = useState(false);
@@ -43,13 +43,29 @@ export default function ProductCard({
     }
   };
 
-  const inStock = quantity > 0;
+  // "В пути" items exist in stock but are not yet arrived — hide price/stock/button
+  const isInTransit = lab ? lab.toLowerCase().startsWith('в пути') : false;
+
+  // Format lab badge: split "В пути #21.02.26" into two lines
+  const formatLabBadge = (labValue: string) => {
+    const transitMatch = labValue.match(/^(в пути)\s*(.*)$/i);
+    if (transitMatch && transitMatch[2]) {
+      return (
+        <>
+          {transitMatch[1]}
+          <br />
+          {transitMatch[2]}
+        </>
+      );
+    }
+    return labValue;
+  };
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    if (!inStock || isAdding) return;
+    if (isAdding) return;
 
     setIsAdding(true);
     const startTime = Date.now();
@@ -65,22 +81,17 @@ export default function ProductCard({
         priceSnapshot: price,
       });
 
-      // Ensure spinner shows for at least 500ms
       const elapsed = Date.now() - startTime;
       const remaining = Math.max(0, 500 - elapsed);
-      
       await new Promise(resolve => setTimeout(resolve, remaining));
       
-      // Success - no modal
     } catch (error: any) {
       console.error('Add to cart error:', error);
       
-      // Ensure spinner shows for at least 500ms even on error
       const elapsed = Date.now() - startTime;
       const remaining = Math.max(0, 500 - elapsed);
       await new Promise(resolve => setTimeout(resolve, remaining));
       
-      // Show error modal
       const errorMessage = error?.response?.data?.message || error?.message || 'Ошибка добавления в корзину';
       setModalMessage(errorMessage);
       setModalType('error');
@@ -101,16 +112,16 @@ export default function ProductCard({
       
       <div className="product-card">
         <Link to={`/product/${id}`} className="product-card-link">
-            <div className="product-card-image">
-                <img 
-                src={imageSrc} 
-                alt={name}
-                onError={handleImageError}
-                />
-                {lab && (
-                    <div className="lab-badge">{lab}</div>
-                )}
-            </div>
+          <div className="product-card-image">
+            <img 
+              src={imageSrc} 
+              alt={name}
+              onError={handleImageError}
+            />
+            {lab && (
+              <div className="lab-badge">{formatLabBadge(lab)}</div>
+            )}
+          </div>
           
           <div className="product-card-content">
             <div className="product-card-header">
@@ -128,29 +139,33 @@ export default function ProductCard({
               </div>
             )}
             
-            <div className="product-card-footer">
-              <div className="product-price">{price.toLocaleString('ru-RU')} ₽</div>
-              <div className="product-stock in-stock">
-                В наличии: {quantity} шт.
+            {!isInTransit && (
+              <div className="product-card-footer">
+                <div className="product-price">{price.toLocaleString('ru-RU')} ₽</div>
+                <div className="product-stock in-stock">
+                  В наличии: {quantity} шт.
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </Link>
         
-        <button 
-          className="add-to-cart-btn"
-          onClick={handleAddToCart}
-          disabled={isAdding}
-        >
-          {isAdding ? (
-            <>
-              <span className="button-spinner"></span>
-              Добавление...
-            </>
-          ) : (
-            'В корзину'
-          )}
-        </button>
+        {!isInTransit && (
+          <button 
+            className="add-to-cart-btn"
+            onClick={handleAddToCart}
+            disabled={isAdding}
+          >
+            {isAdding ? (
+              <>
+                <span className="button-spinner"></span>
+                Добавление...
+              </>
+            ) : (
+              'В корзину'
+            )}
+          </button>
+        )}
       </div>
     </>
   );

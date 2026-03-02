@@ -36,29 +36,32 @@ export class CsvImportService {
       fs.createReadStream(csvPath, { encoding: 'utf8' })
         .pipe(csv({  // ← Now works as default import
           separator: ';',
-          headers: ['art', 'price', 'quantity', 'brand', 'full_name', 'marka', 'model', 'generation', 'ozon', 'wildberries', 'name', 'oem', 'type', 'lab'],
+          headers: ['art', 'price', 'quantity', 'brand', 'full_name', 'marka', 'model', 'generation', 'ozon', 'wildberries', 'name', 'oem', 'type', 'artKod', 'lab'],          
           skipLines: 1,
         }))
         .on('data', (row) => {
-          if (!row.art || !row.art.trim()) return;
-
-          products.push({
-            article: row.art.trim(),
-            price: parseFloat(row.price?.replace(',', '.') || '0'),
-            quantity: parseInt(row.quantity || '0', 10),
-            brand: row.brand?.trim() || '',
-            fullName: row.full_name?.trim() || '',
-            marka: row.marka?.trim() || '',
-            model: row.model?.trim() || '',
-            generation: row.generation?.trim() || '',
-            ozonUrl: row.ozon?.trim() || null,
-            wildberriesUrl: row.wildberries?.trim() || null,
-            name: row.name?.trim() || '',
-            oem: row.oem?.trim() || null,
-            type: row.type?.trim() || null,
-            lab: row.lab?.trim() || null,
-          });
-        })
+            if (!row.art || !row.art.trim()) return;
+  
+            const quantity = parseInt(row.quantity || '0', 10);
+            if (quantity === 0) return;
+  
+            products.push({
+              article: row.art.trim(),
+              price: parseFloat(row.price?.replace(',', '.') || '0'),
+              quantity,
+              brand: row.brand?.trim() || '',
+              fullName: row.full_name?.trim() || '',
+              marka: row.marka?.trim() || '',
+              model: row.model?.trim() || '',
+              generation: row.generation?.trim() || '',
+              ozonUrl: row.ozon?.trim() || null,
+              wildberriesUrl: row.wildberries?.trim() || null,
+              name: row.name?.trim() || '',
+              oem: row.oem?.trim() || null,
+              type: row.type?.trim() || null,
+              lab: row.lab?.trim() || null,
+            });
+          })
         .on('end', async () => {
           try {
             this.logger.log(`Parsed ${products.length} products from CSV`);
