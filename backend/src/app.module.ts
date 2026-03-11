@@ -11,6 +11,7 @@ import { CartModule } from './modules/cart/cart.module';
 import { CrossReferenceModule } from './modules/cross-reference/cross-reference.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
 import { NewsModule } from './modules/news/news.module';
+import { OrdersModule } from './modules/orders/orders.module'; // ← ADD
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { NewsModule } from './modules/news/news.module';
     CrossReferenceModule,
     DeliveryModule,
     NewsModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
