@@ -98,4 +98,16 @@ import {
     this.checkPassword(body.password);
     return this.ordersService.getAllOrders();
     }
+
+    // Админ/1С (password) — в блоке 1С
+    @Post('1c/order/:id')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: '1С: Получить заказ по ID' })
+    getOrderByIdAdmin(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { password: string },
+    ) {
+    this.checkPassword(body.password);
+    return this.ordersService.getOrderById(id);
+    }
   }

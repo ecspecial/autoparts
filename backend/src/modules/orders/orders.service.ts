@@ -184,4 +184,32 @@ import {
       item.priceAfterDiscount = 0;
       return this.orderItemsRepo.save(item);
     }
+
+    // Для админа/1С (без проверки владельца)
+    async getOrderById(orderId: number): Promise<object> {
+        const order = await this.ordersRepo.findOne({
+          where: { id: orderId },
+          relations: ['items', 'user'],
+        });
+        if (!order) throw new NotFoundException('Заказ не найден');
+        return {
+          site_client_id: order.user.id,
+          client_number_1c: order.user.clientNumber1c,
+          delivery_method: order.user.preferredDelivery,
+          order_reference: order.reference,
+          order_id: order.id,
+          order_status: order.status,
+          created_at: order.createdAt,
+          items: order.items.map((item) => ({
+            id: item.id,
+            article: item.article,
+            name: item.name,
+            quantity: item.quantity,
+            price: Number(item.priceSnapshot),
+            discount: item.discount,
+            price_after_discount: item.priceAfterDiscount,
+            status: item.status,
+          })),
+        };
+    }
   }
