@@ -90,4 +90,12 @@ import {
       this.checkPassword(body.password);
       return this.ordersService.rejectItem(id, body.status);
     }
+
+    @Post('1c/all')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: '1С: Все заказы' })
+    getAllOrders(@Body() body: { password: string }) {
+    this.checkPassword(body.password);
+    return this.ordersService.getAllOrders();
+    }
   }

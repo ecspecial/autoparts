@@ -128,6 +128,33 @@ import {
         })),
       }));
     }
+
+    // Все заказы — для админа/1С
+    async getAllOrders(): Promise<object[]> {
+        const orders = await this.ordersRepo
+        .createQueryBuilder('o')
+        .leftJoinAndSelect('o.items', 'items')
+        .leftJoinAndSelect('o.user', 'user')
+        .orderBy('o.createdAt', 'DESC')
+        .getMany();
+        return orders.map((order) => ({
+        site_client_id: order.user.id,
+        client_number_1c: order.user.clientNumber1c,
+        delivery_method: order.user.preferredDelivery,
+        order_reference: order.reference,
+        order_id: order.id,
+        order_status: order.status,
+        created_at: order.createdAt,
+        items: order.items.map((item) => ({
+            id: item.id,
+            article: item.article,
+            name: item.name,
+            quantity: item.quantity,
+            price: Number(item.priceSnapshot),
+            status: item.status,
+        })),
+        }));
+    }
   
     // б) Установить статус заказа целиком
     async updateOrderStatus(orderId: number, status: string): Promise<Order> {
