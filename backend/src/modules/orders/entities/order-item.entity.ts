@@ -29,10 +29,10 @@ import {
     @Column({ type: 'text', name: 'full_name', nullable: true })
     fullName: string | null;
   
-    @Column({ length: 100, nullable: true })
+    @Column({ type: 'varchar', length: 100, nullable: true })
     marka: string | null;
   
-    @Column({ length: 100, nullable: true })
+    @Column({ type: 'varchar', length: 100, nullable: true })
     model: string | null;
   
     @Column('decimal', { precision: 10, scale: 2, name: 'price_snapshot' })
