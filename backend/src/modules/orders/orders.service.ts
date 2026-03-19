@@ -61,7 +61,7 @@ import {
       const reference = await this.generateReference();
   
       const savedOrder = await this.ordersRepo.save(
-        this.ordersRepo.create({ userId, reference, status: null }),
+        this.ordersRepo.create({ userId, reference, status: null, orderSource: 'site' }),
       );
   
       const orderItems = items.map((ci) =>
@@ -114,6 +114,9 @@ import {
       return orders.map((order) => ({
         site_client_id: order.user.id,
         client_number_1c: order.user.clientNumber1c,
+        full_name: order.user.fullName || null,
+        phone: order.user.phone || null,
+        order_source: order.orderSource || null,
         delivery_method: order.user.preferredDelivery,
         order_reference: order.reference,
         order_id: order.id,
@@ -140,6 +143,7 @@ import {
         return orders.map((order) => ({
         site_client_id: order.user.id,
         client_number_1c: order.user.clientNumber1c,
+        order_source: order.orderSource || null,
         delivery_method: order.user.preferredDelivery,
         order_reference: order.reference,
         order_id: order.id,
@@ -195,6 +199,7 @@ import {
         return {
           site_client_id: order.user.id,
           client_number_1c: order.user.clientNumber1c,
+          order_source: order.orderSource || null,
           delivery_method: order.user.preferredDelivery,
           order_reference: order.reference,
           order_id: order.id,
@@ -211,5 +216,21 @@ import {
             status: item.status,
           })),
         };
+    }
+
+    // Обновление скидки и итоговой цены по позиции
+    async updateItemDiscount(
+      orderId: number,
+      itemId: number,
+      discount: number,
+      priceAfterDiscount: number,
+    ): Promise<OrderItem> {
+      const item = await this.orderItemsRepo.findOne({
+        where: { id: itemId, orderId },
+      });
+      if (!item) throw new NotFoundException('Позиция заказа не найдена');
+      item.discount = discount;
+      item.priceAfterDiscount = priceAfterDiscount;
+      return this.orderItemsRepo.save(item);
     }
   }

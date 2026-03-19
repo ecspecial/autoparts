@@ -293,6 +293,15 @@ const ProfilePage = () => {
               <div className="orders-section">
                 <h2 className="profile-section-title">Мои заказы</h2>
 
+                {(location.state as any)?.orderJustPlaced && (
+                  <div className="order-placed-notice">
+                    <p><strong>Заказ оформлен.</strong></p>
+                    <p>1 — Дождитесь обновления заказа менеджером и применения скидок.</p>
+                    <p>2 — Обновленный финальный заказ вы увидите в личном кабинете.</p>
+                    <p>Статусы заказа: на рассмотрении менеджера, готов и др.</p>
+                  </div>
+                )}
+
                 {!profile?.isActive ? (
                   <div className="orders-empty">
                     <p>Оформление заказов будет доступно после активации аккаунта менеджером.</p>
@@ -306,7 +315,12 @@ const ProfilePage = () => {
                     {orders.map((order) => {
                       const isExpanded = expandedOrderIds.has(order.id);
                       const orderTotal = order.items.reduce(
-                        (sum, item) => sum + Number(item.priceSnapshot) * item.quantity,
+                        (sum, item) => {
+                          const price = item.priceAfterDiscount != null
+                            ? Number(item.priceAfterDiscount)
+                            : Number(item.priceSnapshot);
+                          return sum + price * item.quantity;
+                        },
                         0,
                       );
                       return (

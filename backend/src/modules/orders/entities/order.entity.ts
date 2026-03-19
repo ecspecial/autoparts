@@ -27,6 +27,9 @@ import {
   
     @Column({ type: 'varchar', length: 100, nullable: true, default: null })
     status: string | null;
+
+    @Column({ type: 'varchar', name: 'order_source', length: 50, nullable: true, default: null })
+    orderSource: string | null; // "site" — с сайта, пусто/другое — через API
   
     @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
     items: OrderItem[];

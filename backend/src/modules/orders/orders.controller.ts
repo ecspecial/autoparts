@@ -15,6 +15,7 @@ import {
   import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
   import { OrdersService } from './orders.service';
   import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateItemDiscountDto } from './dto/update-item-discount.dto';
   
   @ApiTags('Заказы')
   @Controller('orders')
@@ -89,6 +90,22 @@ import {
     ) {
       this.checkPassword(body.password);
       return this.ordersService.rejectItem(id, body.status);
+    }
+
+    @Post('1c/item/:id/discount')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: '1С: Обновить скидку и итоговую цену позиции' })
+    updateItemDiscount(
+      @Param('id', ParseIntPipe) id: number,
+      @Body() body: UpdateItemDiscountDto,
+    ) {
+      this.checkPassword(body.password);
+      return this.ordersService.updateItemDiscount(
+        body.order_id,
+        id,
+        body.discount,
+        body.price_after_discount,
+      );
     }
 
     @Post('1c/all')
