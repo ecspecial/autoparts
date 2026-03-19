@@ -49,10 +49,10 @@ const ProfilePage = () => {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (activeTab === 'orders' && isAuthenticated && orders.length === 0 && !ordersLoading) {
+    if (activeTab === 'orders' && isAuthenticated && !ordersLoading) {
       loadOrders();
     }
-  }, [activeTab]);
+  }, [activeTab, isAuthenticated]);
 
   const loadData = async () => {
     setLoading(true);
