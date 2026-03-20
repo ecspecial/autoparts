@@ -199,6 +199,8 @@ import {
         return {
           site_client_id: order.user.id,
           client_number_1c: order.user.clientNumber1c,
+          full_name: order.user.fullName || null,
+          phone: order.user.phone || null,
           order_source: order.orderSource || null,
           delivery_method: order.user.preferredDelivery,
           order_reference: order.reference,
