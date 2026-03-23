@@ -1,5 +1,5 @@
 .vehicle-catalog-filters {
-  padding: 0 2rem 2.5rem;
+  padding: 16px 2rem 2.5rem;
   background-color: var(--bg-gray);
 }
 
@@ -120,7 +120,7 @@
 
 @media (max-width: 640px) {
   .vehicle-catalog-filters {
-    padding: 0 1rem 1.5rem;
+    padding: 16px 1rem 1.5rem;
   }
 
   .vehicle-catalog-filters__inner {
