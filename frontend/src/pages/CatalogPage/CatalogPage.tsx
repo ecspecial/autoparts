@@ -31,6 +31,21 @@ export default function CatalogPage() {
   const nameKeyword = searchParams.get('nameKeyword') || '';
   const navigate = useNavigate();
 
+  // Синхронизация фильтров с URL (?marka=&model=&generation=&type=) — с главной страницы
+  useEffect(() => {
+    const m = searchParams.get('marka') || '';
+    const mo = searchParams.get('model') || '';
+    const g = searchParams.get('generation') || '';
+    const t = searchParams.get('type') || '';
+    if (m || mo || g || t) {
+      setSelectedMarka(m);
+      setSelectedModel(mo);
+      setSelectedGeneration(g);
+      setSelectedPartType(t);
+      setCurrentPage(1);
+    }
+  }, [searchParams]);
+
   const [searchQuery, setSearchQuery] = useState('');
 
   // Load categories on mount

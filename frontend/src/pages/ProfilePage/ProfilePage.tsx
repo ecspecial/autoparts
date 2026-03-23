@@ -7,6 +7,7 @@ import { ordersApi } from '../../api/orders';
 import type { DeliveryMethod } from '../../api/delivery';
 import type { UserProfile } from '../../api/auth';
 import type { Order } from '../../api/orders';
+import { getOrderItemUnitPrice } from '../../utils/orderItemPrice';
 import './ProfilePage.css';
 
 type ActiveTab = 'profile' | 'orders';
@@ -315,12 +316,8 @@ const ProfilePage = () => {
                     {orders.map((order) => {
                       const isExpanded = expandedOrderIds.has(order.id);
                       const orderTotal = order.items.reduce(
-                        (sum, item) => {
-                          const price = item.priceAfterDiscount != null
-                            ? Number(item.priceAfterDiscount)
-                            : Number(item.priceSnapshot);
-                          return sum + price * item.quantity;
-                        },
+                        (sum, item) =>
+                          sum + getOrderItemUnitPrice(item) * item.quantity,
                         0,
                       );
                       return (
@@ -381,9 +378,7 @@ const ProfilePage = () => {
                                       {item.discount != null ? `${item.discount}%` : '—'}
                                     </span>
                                     <span className="text-right">
-                                      {item.priceAfterDiscount != null
-                                        ? `${Number(item.priceAfterDiscount).toLocaleString('ru-RU')} ₽`
-                                        : '—'}
+                                      {getOrderItemUnitPrice(item).toLocaleString('ru-RU')} ₽
                                     </span>
                                     <span className="text-center">
                                       {item.status ? (

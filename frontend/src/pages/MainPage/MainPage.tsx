@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import SearchSection from '../../components/SearchSection/SearchSection';
+import VehicleCatalogFilters from '../../components/VehicleCatalogFilters/VehicleCatalogFilters';
 import CategoryCard from '../../components/CategoryCard/CategoryCard';
 import { newsApi } from '../../api/news';
 import type { NewsItem } from '../../api/news';
@@ -49,6 +50,8 @@ const MainPage = () => {
   return (
     <div className="main-page">
       <SearchSection />
+
+      <VehicleCatalogFilters />
 
       <section className="categories-section">
         <div className="categories-container">
