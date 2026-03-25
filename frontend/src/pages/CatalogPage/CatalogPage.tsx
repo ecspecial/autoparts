@@ -6,7 +6,7 @@ import ProductCard from '../../components/ProductCard/ProductCard';
 import './CatalogPage.css';
 
 export default function CatalogPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const nameKeyword = searchParams.get('nameKeyword') || '';
 
   const [categories, setCategories] = useState<CategoriesResponse | null>(null);
@@ -41,6 +41,39 @@ export default function CatalogPage() {
   const navigate = useNavigate();
 
   const productsRequestId = useRef(0);
+
+  // Пишем фильтры в URL (replace), чтобы «Назад» с карточки товара возвращал на каталог с теми же фильтрами
+  useEffect(() => {
+    const mUrl = searchParams.get('marka') ?? '';
+    const moUrl = searchParams.get('model') ?? '';
+    const gUrl = searchParams.get('generation') ?? '';
+    const tUrl = searchParams.get('type') ?? '';
+    const nkUrl = searchParams.get('nameKeyword') ?? '';
+    if (
+      mUrl === selectedMarka &&
+      moUrl === selectedModel &&
+      gUrl === selectedGeneration &&
+      tUrl === selectedPartType &&
+      nkUrl === nameKeyword
+    ) {
+      return;
+    }
+    const next = new URLSearchParams();
+    if (selectedMarka) next.set('marka', selectedMarka);
+    if (selectedModel) next.set('model', selectedModel);
+    if (selectedGeneration) next.set('generation', selectedGeneration);
+    if (selectedPartType) next.set('type', selectedPartType);
+    if (nameKeyword) next.set('nameKeyword', nameKeyword);
+    setSearchParams(next, { replace: true });
+  }, [
+    selectedMarka,
+    selectedModel,
+    selectedGeneration,
+    selectedPartType,
+    nameKeyword,
+    searchParams,
+    setSearchParams,
+  ]);
 
   // Синхронизация только если в URL есть фильтры (иначе сбросим выбор в UI при nameKeyword и т.д.)
   useEffect(() => {
@@ -172,7 +205,7 @@ export default function CatalogPage() {
     setSelectedGeneration('');
     setSelectedPartType('');
     setCurrentPage(1);
-    navigate('/catalog', { replace: true });
+    setSearchParams({}, { replace: true });
   };
 
   // Get available models for selected brand
