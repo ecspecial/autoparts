@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { productsApi } from '../../api/products';
 import type { Product, CategoriesResponse } from '../../api/products';
@@ -6,16 +6,27 @@ import ProductCard from '../../components/ProductCard/ProductCard';
 import './CatalogPage.css';
 
 export default function CatalogPage() {
+  const [searchParams] = useSearchParams();
+  const nameKeyword = searchParams.get('nameKeyword') || '';
+
   const [categories, setCategories] = useState<CategoriesResponse | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter state
-  const [selectedMarka, setSelectedMarka] = useState<string>('');
-  const [selectedModel, setSelectedModel] = useState<string>('');
-  const [selectedGeneration, setSelectedGeneration] = useState<string>('');
-  const [selectedPartType, setSelectedPartType] = useState<string>('');
+  // Фильтры сразу из URL — иначе первый loadProducts успевает без фильтров (гонка с useEffect)
+  const [selectedMarka, setSelectedMarka] = useState(
+    () => searchParams.get('marka') ?? '',
+  );
+  const [selectedModel, setSelectedModel] = useState(
+    () => searchParams.get('model') ?? '',
+  );
+  const [selectedGeneration, setSelectedGeneration] = useState(
+    () => searchParams.get('generation') ?? '',
+  );
+  const [selectedPartType, setSelectedPartType] = useState(
+    () => searchParams.get('type') ?? '',
+  );
   
   // Dynamic part types based on current filters
   const [availablePartTypes, setAvailablePartTypes] = useState<string[]>([]);
@@ -27,16 +38,16 @@ export default function CatalogPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
 
-  const [searchParams] = useSearchParams();
-  const nameKeyword = searchParams.get('nameKeyword') || '';
   const navigate = useNavigate();
 
-  // Синхронизация фильтров с URL (?marka=&model=&generation=&type=) — с главной страницы
+  const productsRequestId = useRef(0);
+
+  // Синхронизация только если в URL есть фильтры (иначе сбросим выбор в UI при nameKeyword и т.д.)
   useEffect(() => {
-    const m = searchParams.get('marka') || '';
-    const mo = searchParams.get('model') || '';
-    const g = searchParams.get('generation') || '';
-    const t = searchParams.get('type') || '';
+    const m = searchParams.get('marka') ?? '';
+    const mo = searchParams.get('model') ?? '';
+    const g = searchParams.get('generation') ?? '';
+    const t = searchParams.get('type') ?? '';
     if (m || mo || g || t) {
       setSelectedMarka(m);
       setSelectedModel(mo);
@@ -94,28 +105,34 @@ export default function CatalogPage() {
   };
 
   const loadProducts = async () => {
+    const reqId = ++productsRequestId.current;
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await productsApi.searchProducts({
         marka: selectedMarka || undefined,
         model: selectedModel || undefined,
         generation: selectedGeneration || undefined,
         type: selectedPartType || undefined,
-        nameKeyword: nameKeyword || undefined, 
+        nameKeyword: nameKeyword || undefined,
         page: currentPage,
         limit,
       });
-      
+
+      if (reqId !== productsRequestId.current) return;
+
       setProducts(response.items);
       setTotal(response.total);
       setTotalPages(response.pages);
     } catch (err) {
+      if (reqId !== productsRequestId.current) return;
       console.error('Failed to load products:', err);
       setError('Не удалось загрузить товары');
     } finally {
-      setLoading(false);
+      if (reqId === productsRequestId.current) {
+        setLoading(false);
+      }
     }
   };
 
