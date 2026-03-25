@@ -64,11 +64,23 @@ main {
   flex: 1;
   }
 
-/* Prevent iPhone zoom on input focus */
-@media (max-width: 640px) {
-  input,
+/*
+ * iOS Safari zooms the viewport when focusing inputs with font-size < 16px.
+ * Keep form controls and other interactive text at least 16px on narrow viewports.
+ */
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
   select,
   textarea {
     font-size: 16px !important;
+  }
+
+  button,
+  [role="button"] {
+    font-size: max(16px, 1em) !important;
+  }
+
+  a[href] {
+    font-size: max(16px, 1em) !important;
   }
 }
