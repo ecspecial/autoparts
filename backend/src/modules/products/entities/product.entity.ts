@@ -9,7 +9,7 @@ export class Product {
   article: string;
 
   /** Внутренний код из прайса (колонка artKod в CSV); для отображения и новинок */
-  @Column({ length: 120, nullable: true })
+  @Column({ type: 'varchar', length: 120, nullable: true })
   artKod: string | null;
 
   @Column('decimal', { precision: 10, scale: 2 })
