@@ -97,6 +97,35 @@ import {
         },
       };
     }
+
+    @Post(':id/deactivate')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Снять клиентский номер 1С и деактивировать пользователя' })
+    @ApiBody({
+      schema: {
+        type: 'object',
+        properties: {
+          password: { type: 'string' },
+        },
+        required: ['password'],
+      },
+    })
+    async deactivateUser(
+      @Param('id', ParseIntPipe) id: number,
+      @Body() body: { password: string },
+    ) {
+      this.checkPassword(body.password);
+      const user = await this.usersService.deactivate(id);
+      return {
+        message: `Пользователь ${user.login} деактивирован, клиентский номер снят`,
+        user: {
+          id: user.id,
+          login: user.login,
+          clientNumber1c: user.clientNumber1c,
+          isActive: user.isActive,
+        },
+      };
+    }
   
     @Post(':id/balance')
     @HttpCode(HttpStatus.OK)

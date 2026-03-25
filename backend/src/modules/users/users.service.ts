@@ -111,6 +111,15 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
+  /** Admin: снять клиентский номер 1С и деактивировать (обратно к activate) */
+  async deactivate(userId: number): Promise<User> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    user.clientNumber1c = null;
+    user.isActive = false;
+    return this.usersRepository.save(user);
+  }
+
   // Admin: update user balance
   async updateBalance(userId: number, balance: number): Promise<User> {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
