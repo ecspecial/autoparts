@@ -41,6 +41,8 @@ export default function CatalogPage() {
   const navigate = useNavigate();
 
   const productsRequestId = useRef(0);
+  /** Сброс keyword с главной: эффект ниже не должен снова записать nameKeyword из устаревшего замыкания */
+  const omitNameKeywordInNextUrlSyncRef = useRef(false);
 
   // Пишем фильтры в URL (replace), чтобы «Назад» с карточки товара возвращал на каталог с теми же фильтрами
   useEffect(() => {
@@ -48,29 +50,33 @@ export default function CatalogPage() {
     const moUrl = searchParams.get('model') ?? '';
     const gUrl = searchParams.get('generation') ?? '';
     const tUrl = searchParams.get('type') ?? '';
-    const nkUrl = searchParams.get('nameKeyword') ?? '';
-    if (
+    const filtersMatchUrl =
       mUrl === selectedMarka &&
       moUrl === selectedModel &&
       gUrl === selectedGeneration &&
-      tUrl === selectedPartType &&
-      nkUrl === nameKeyword
-    ) {
+      tUrl === selectedPartType;
+    if (filtersMatchUrl && !omitNameKeywordInNextUrlSyncRef.current) {
       return;
     }
-    const next = new URLSearchParams();
+    const next = new URLSearchParams(searchParams);
     if (selectedMarka) next.set('marka', selectedMarka);
+    else next.delete('marka');
     if (selectedModel) next.set('model', selectedModel);
+    else next.delete('model');
     if (selectedGeneration) next.set('generation', selectedGeneration);
+    else next.delete('generation');
     if (selectedPartType) next.set('type', selectedPartType);
-    if (nameKeyword) next.set('nameKeyword', nameKeyword);
+    else next.delete('type');
+    if (omitNameKeywordInNextUrlSyncRef.current) {
+      next.delete('nameKeyword');
+      omitNameKeywordInNextUrlSyncRef.current = false;
+    }
     setSearchParams(next, { replace: true });
   }, [
     selectedMarka,
     selectedModel,
     selectedGeneration,
     selectedPartType,
-    nameKeyword,
     searchParams,
     setSearchParams,
   ]);
@@ -137,6 +143,16 @@ export default function CatalogPage() {
     }
   };
 
+  /** Убрать поиск с главной (плитка «капот» и т.д.) при выборе типа запчасти */
+  const clearNameKeywordFromUrl = () => {
+    omitNameKeywordInNextUrlSyncRef.current = true;
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('nameKeyword');
+      return next;
+    }, { replace: true });
+  };
+
   const loadProducts = async () => {
     const reqId = ++productsRequestId.current;
     setLoading(true);
@@ -178,17 +194,12 @@ export default function CatalogPage() {
     setCurrentPage(1);
   };
 
-  // Handle model selection — сбрасываем поиск с главной (nameKeyword), иначе он суммируется с фильтрами
+  // Handle model selection
   const handleModelChange = (model: string) => {
     setSelectedModel(model);
     setSelectedGeneration('');
     setSelectedPartType('');
     setCurrentPage(1);
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.delete('nameKeyword');
-      return next;
-    }, { replace: true });
   };
 
   // Handle generation selection
@@ -201,6 +212,7 @@ export default function CatalogPage() {
   const handlePartTypeChange = (partType: string) => {
     setSelectedPartType(partType);
     setCurrentPage(1);
+    clearNameKeywordFromUrl();
   };
 
   // Reset all filters
