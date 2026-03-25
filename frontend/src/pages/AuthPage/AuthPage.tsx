@@ -9,11 +9,10 @@ type EntityType = 'individual' | 'legal';
 
 function AuthPage() {
   const [mode, setMode] = useState<AuthMode>('login');
-  const [login, setLogin] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
   const [entityType, setEntityType] = useState<EntityType>('individual');
   const [fullName, setFullName] = useState('');
   const [consentChecked, setConsentChecked] = useState(false);
@@ -94,10 +93,9 @@ function AuthPage() {
 
     try {
       if (mode === 'login') {
-        await authLogin(login, password);
+        await authLogin(email, password);
       } else {
         await authRegister({
-          login,
           password,
           phone,
           email,
@@ -136,19 +134,20 @@ function AuthPage() {
         
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="login">Логин</label>
+            <label htmlFor="email">Email</label>
             <input
-              type="text"
-              id="login"
-              value={login}
-              onChange={(e) => setLogin(e.target.value)}
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
               disabled={isLoading}
-              autoComplete="username"
+              autoComplete="email"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck="false"
-              onInvalid={(e) => handleInvalidRequired(e, 'Пожалуйста, введите логин')}
+              placeholder="user@example.com"
+              onInvalid={(e) => handleInvalidRequired(e, 'Пожалуйста, введите email')}
               onInput={handleInputClear}
             />
           </div>
@@ -208,21 +207,6 @@ function AuthPage() {
                   disabled={isLoading}
                   placeholder="+7 (999) 123-45-67"
                   onInvalid={(e) => handleInvalidRequired(e, 'Пожалуйста, введите телефон')}
-                  onInput={handleInputClear}
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="email">Email</label>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  placeholder="user@example.com"
-                  onInvalid={(e) => handleInvalidRequired(e, 'Пожалуйста, введите email')}
                   onInput={handleInputClear}
                 />
               </div>

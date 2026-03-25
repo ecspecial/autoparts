@@ -4,7 +4,6 @@ import type { AuthResponse, RegisterData } from '../api/auth';
 
 interface User {
   id: number;
-  login: string;
   discount: number;
   balance: number;
   isActive: boolean;
@@ -19,7 +18,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (login: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
@@ -53,9 +52,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(response.user);
   };
 
-  const login = async (login: string, password: string) => {
+  const login = async (email: string, password: string) => {
     try {
-      const response = await authApi.login({ login, password });
+      const response = await authApi.login({ email, password });
       handleAuthResponse(response);
     } catch (error: any) {
       const message = error.response?.data?.message || 'Ошибка входа';
@@ -78,7 +77,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profile = await authApi.getProfile();
       const updatedUser: User = {
         id: profile.id,
-        login: profile.login,
         discount: profile.discount,
         balance: profile.balance,
         isActive: profile.isActive,

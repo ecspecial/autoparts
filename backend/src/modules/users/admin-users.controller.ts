@@ -35,7 +35,6 @@ import {
       const users = await this.usersService.findPending();
       return users.map(u => ({
         id: u.id,
-        login: u.login,
         phone: u.phone,
         email: u.email,
         entityType: u.entityType,
@@ -55,7 +54,6 @@ import {
       const users = await this.usersService.findActive();
       return users.map(u => ({
         id: u.id,
-        login: u.login,
         phone: u.phone,
         email: u.email,
         entityType: u.entityType,
@@ -88,10 +86,10 @@ import {
       this.checkPassword(body.password);
       const user = await this.usersService.activate(id, body.clientNumber1c);
       return {
-        message: `Пользователь ${user.login} активирован с номером ${body.clientNumber1c}`,
+        message: `Пользователь ${user.email} активирован с номером ${body.clientNumber1c}`,
         user: {
           id: user.id,
-          login: user.login,
+          email: user.email,
           clientNumber1c: user.clientNumber1c,
           isActive: user.isActive,
         },
@@ -117,10 +115,10 @@ import {
       this.checkPassword(body.password);
       const user = await this.usersService.deactivate(id);
       return {
-        message: `Пользователь ${user.login} деактивирован, клиентский номер снят`,
+        message: `Пользователь ${user.email} деактивирован, клиентский номер снят`,
         user: {
           id: user.id,
-          login: user.login,
+          email: user.email,
           clientNumber1c: user.clientNumber1c,
           isActive: user.isActive,
         },
@@ -138,7 +136,7 @@ import {
       const user = await this.usersService.updateBalance(id, body.balance);
       return {
         message: `Баланс обновлен`,
-        user: { id: user.id, login: user.login, balance: Number(user.balance) },
+        user: { id: user.id, email: user.email, balance: Number(user.balance) },
       };
     }
   }

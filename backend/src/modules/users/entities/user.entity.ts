@@ -10,9 +10,6 @@ import {
     @PrimaryGeneratedColumn()
     id: number;
   
-    @Column({ unique: true })
-    login: string;
-  
     @Column({ name: 'password_hash' })
     passwordHash: string;
   
@@ -25,7 +22,7 @@ import {
     @Column({ length: 20, default: '' })
     phone: string;
   
-    @Column({ length: 200, default: '' })
+    @Column({ length: 200, default: '', unique: true })
     email: string;
   
     @Column({ name: 'entity_type', length: 20, default: 'individual' })

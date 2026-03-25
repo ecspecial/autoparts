@@ -46,15 +46,16 @@ export default function ProductCard({
   // "В пути" items exist in stock but are not yet arrived — hide price/stock/button
   const isInTransit = lab ? lab.toLowerCase().startsWith('в пути') : false;
 
-  // Format lab badge: split "В пути #21.02.26" into two lines
+  // Format lab badge: split "В пути #21.02.26" into two lines (без # перед датой)
   const formatLabBadge = (labValue: string) => {
     const transitMatch = labValue.match(/^(в пути)\s*(.*)$/i);
     if (transitMatch && transitMatch[2]) {
+      const rest = transitMatch[2].trim().replace(/^\s*#\s*/, '');
       return (
         <>
           {transitMatch[1]}
           <br />
-          {transitMatch[2]}
+          {rest}
         </>
       );
     }

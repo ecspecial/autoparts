@@ -10,12 +10,17 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async findByLogin(login: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { login } });
+  /** Регистрация: email считается уникальным (без учёта регистра и краёв пробелов) */
+  async findByEmailNormalized(email: string): Promise<User | null> {
+    const normalized = email.toLowerCase().trim();
+    if (!normalized) return null;
+    return this.usersRepository
+      .createQueryBuilder('user')
+      .where('LOWER(TRIM(user.email)) = :email', { email: normalized })
+      .getOne();
   }
 
   async create(data: {
-    login: string;
     passwordHash: string;
     phone: string;
     email: string;
@@ -24,10 +29,9 @@ export class UsersService {
     discount?: number;
   }): Promise<User> {
     const user = this.usersRepository.create({
-      login: data.login,
       passwordHash: data.passwordHash,
       phone: data.phone,
-      email: data.email,
+      email: data.email.toLowerCase().trim(),
       entityType: data.entityType,
       fullName: data.fullName,
       discount: data.discount || 0,
@@ -48,7 +52,6 @@ export class UsersService {
     if (!user) throw new NotFoundException('Пользователь не найден');
     return {
       id: user.id,
-      login: user.login,
       phone: user.phone,
       email: user.email,
       entityType: user.entityType,

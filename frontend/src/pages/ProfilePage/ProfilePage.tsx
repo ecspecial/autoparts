@@ -197,8 +197,8 @@ const ProfilePage = () => {
                         <div className="profile-form-value">{profile.fullName}</div>
                       </div>
                       <div className="profile-form-group">
-                        <label className="profile-form-label">Логин</label>
-                        <div className="profile-form-value">{profile.login}</div>
+                        <label className="profile-form-label">Email</label>
+                        <div className="profile-form-value">{profile.email}</div>
                       </div>
                       <div className="profile-form-group">
                         <label className="profile-form-label">Email</label>

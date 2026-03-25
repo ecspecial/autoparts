@@ -1,7 +1,6 @@
 import apiClient from './client';
 
 export interface RegisterData {
-  login: string;
   password: string;
   phone: string;
   email: string;
@@ -13,13 +12,12 @@ export interface RegisterData {
 }
 
 export interface LoginData {
-  login: string;
+  email: string;
   password: string;
 }
 
 export interface AuthUser {
   id: number;
-  login: string;
   discount: number;
   balance: number;
   isActive: boolean;
@@ -37,7 +35,6 @@ export interface AuthResponse {
 
 export interface UserProfile {
   id: number;
-  login: string;
   phone: string;
   email: string;
   entityType: string;

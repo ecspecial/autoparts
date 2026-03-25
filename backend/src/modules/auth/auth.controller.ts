@@ -23,11 +23,10 @@ export class AuthController {
   @Post('register')
   @ApiOperation({ summary: 'Регистрация нового пользователя' })
   @ApiResponse({ status: 201, description: 'Пользователь успешно зарегистрирован' })
-  @ApiResponse({ status: 409, description: 'Пользователь с таким логином уже существует' })
+  @ApiResponse({ status: 409, description: 'Пользователь с таким email уже зарегистрирован' })
   @ApiResponse({ status: 400, description: 'Некорректные данные запроса' })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register({
-      login: registerDto.login,
       password: registerDto.password,
       phone: registerDto.phone,
       email: registerDto.email,
@@ -43,8 +42,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Вход пользователя в систему' })
   @ApiResponse({ status: 200, description: 'Пользователь успешно авторизован' })
-  @ApiResponse({ status: 401, description: 'Неверный логин или пароль' })
+  @ApiResponse({ status: 401, description: 'Неверный email или пароль' })
   async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto.login, loginDto.password);
+    return this.authService.login(loginDto.email, loginDto.password);
   }
 }
