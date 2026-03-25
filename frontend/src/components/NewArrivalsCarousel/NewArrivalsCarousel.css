@@ -37,7 +37,7 @@
 
 .new-arrivals__frame {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   gap: 0.5rem;
   min-width: 0;
 }
@@ -63,6 +63,23 @@
   padding: 1rem 0.75rem 1.25rem;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+/* Убрать стрелки по краям скроллбара (Chrome / Edge / Safari) */
+.new-arrivals__track::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.new-arrivals__track::-webkit-scrollbar {
+  height: 8px;
+}
+
+.new-arrivals__track::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--border-color);
 }
 
 .new-arrivals__track:focus-visible {
@@ -139,17 +156,18 @@
 
 .new-arrivals__nav {
   flex-shrink: 0;
-  width: 40px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: 50%;
   background: var(--white);
   color: var(--text-primary);
-  font-size: 1.5rem;
-  line-height: 1;
+  font-size: 1.35rem;
+  line-height: 0;
   cursor: pointer;
   align-self: center;
   padding: 0;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: background 0.15s, border-color 0.15s;
