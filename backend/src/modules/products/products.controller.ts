@@ -99,6 +99,20 @@ export class ProductsController {
     return this.productsService.unifiedSearch(q, page, limit);
   }
 
+  @Get('new-arrivals')
+  @ApiOperation({
+    summary:
+      'Новинки для главной (lab с «новинк» или последние по дате, до 15 шт.)',
+  })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getNewArrivals(@Query('limit') limit?: number) {
+    const n = limit != null ? Number(limit) : 15;
+    const items = await this.productsService.getNewArrivals(
+      Number.isFinite(n) ? n : 15,
+    );
+    return { items };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Получить информацию о товаре по ID' })
   @ApiParam({ name: 'id', type: 'number', description: 'ID товара' })

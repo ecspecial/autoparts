@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import SearchSection from '../../components/SearchSection/SearchSection';
 import VehicleCatalogFilters from '../../components/VehicleCatalogFilters/VehicleCatalogFilters';
 import CategoryCard from '../../components/CategoryCard/CategoryCard';
+import NewArrivalsCarousel from '../../components/NewArrivalsCarousel/NewArrivalsCarousel';
 import { newsApi } from '../../api/news';
 import type { NewsItem } from '../../api/news';
 import { Link } from 'react-router-dom';
@@ -88,6 +89,8 @@ const MainPage = () => {
           </div>
         </section>
       )}
+
+      <NewArrivalsCarousel />
     </div>
   );
 };

@@ -45,8 +45,11 @@ export class CsvImportService {
             const quantity = parseInt(row.quantity || '0', 10);
             if (quantity === 0) return;
   
+            const artTrim = row.art.trim();
+            const artKodTrim = row.artKod?.trim();
             products.push({
-              article: row.art.trim(),
+              article: artTrim,
+              artKod: artKodTrim || null,
               price: parseFloat(row.price?.replace(',', '.') || '0'),
               quantity,
               brand: row.brand?.trim() || '',

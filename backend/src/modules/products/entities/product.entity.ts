@@ -8,6 +8,10 @@ export class Product {
   @Column({ unique: true, length: 50 })
   article: string;
 
+  /** Внутренний код из прайса (колонка artKod в CSV); для отображения и новинок */
+  @Column({ length: 120, nullable: true })
+  artKod: string | null;
+
   @Column('decimal', { precision: 10, scale: 2 })
   price: number;
 

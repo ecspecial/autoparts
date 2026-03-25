@@ -3,6 +3,8 @@ import apiClient from './client';
 export interface Product {
   id: number;
   article: string;
+  /** Внутренний код (колонка artKod); если нет — показываем article */
+  artKod?: string | null;
   price: string;
   quantity: number;
   brand: string;
@@ -58,6 +60,10 @@ export interface UnifiedSearchResponse {
     articlesFound: string[];
   }
 
+export interface NewArrivalsResponse {
+  items: Product[];
+}
+
 export const productsApi = {
   // Get categories hierarchy
   getCategories: async (): Promise<CategoriesResponse> => {
@@ -95,6 +101,13 @@ export const productsApi = {
   unifiedSearch: async (q: string, page: number = 1, limit: number = 20): Promise<UnifiedSearchResponse> => {
     const response = await apiClient.get<UnifiedSearchResponse>('/products/unified-search', {
       params: { q, page, limit },
+    });
+    return response.data;
+  },
+
+  getNewArrivals: async (limit = 15): Promise<NewArrivalsResponse> => {
+    const response = await apiClient.get<NewArrivalsResponse>('/products/new-arrivals', {
+      params: { limit },
     });
     return response.data;
   },

@@ -141,6 +141,45 @@ export class ProductsService {
     return result.map(r => r.type);
   }
 
+  /**
+   * Новинки для главной: в приоритете строки с lab, содержащим «новинк»;
+   * если таких мало — дополняем последними по дате добавления (createdAt).
+   */
+  async getNewArrivals(limit = 15): Promise<Product[]> {
+    const take = Math.min(Math.max(limit, 1), 30);
+
+    const flagged = await this.productRepository
+      .createQueryBuilder('p')
+      .where('p.quantity > 0')
+      .andWhere('p.lab IS NOT NULL')
+      .andWhere('LOWER(p.lab) LIKE :nov', { nov: '%новинк%' })
+      .orderBy('p.createdAt', 'DESC')
+      .take(take)
+      .getMany();
+
+    if (flagged.length >= Math.min(10, take)) {
+      return flagged.slice(0, take);
+    }
+
+    const fallback = await this.productRepository
+      .createQueryBuilder('p')
+      .where('p.quantity > 0')
+      .orderBy('p.createdAt', 'DESC')
+      .take(take)
+      .getMany();
+
+    const seen = new Set(flagged.map((x) => x.id));
+    const merged = [...flagged];
+    for (const p of fallback) {
+      if (merged.length >= take) break;
+      if (!seen.has(p.id)) {
+        merged.push(p);
+        seen.add(p.id);
+      }
+    }
+    return merged.slice(0, take);
+  }
+
   async unifiedSearch(
     query: string,
     page: number = 1,
