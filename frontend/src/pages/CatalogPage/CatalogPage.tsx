@@ -178,12 +178,17 @@ export default function CatalogPage() {
     setCurrentPage(1);
   };
 
-  // Handle model selection
+  // Handle model selection — сбрасываем поиск с главной (nameKeyword), иначе он суммируется с фильтрами
   const handleModelChange = (model: string) => {
     setSelectedModel(model);
     setSelectedGeneration('');
     setSelectedPartType('');
     setCurrentPage(1);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('nameKeyword');
+      return next;
+    }, { replace: true });
   };
 
   // Handle generation selection
