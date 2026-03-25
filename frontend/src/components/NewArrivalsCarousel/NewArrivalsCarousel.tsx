@@ -72,7 +72,20 @@ export default function NewArrivalsCarousel() {
               aria-label="Предыдущие товары"
               onClick={() => scrollByDir(-1)}
             >
-              ‹
+              <svg
+                className="new-arrivals__nav-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 18l-6-6 6-6"
+                />
+              </svg>
             </button>
             <div className="new-arrivals__track-wrap">
               <div
@@ -125,7 +138,20 @@ export default function NewArrivalsCarousel() {
               aria-label="Следующие товары"
               onClick={() => scrollByDir(1)}
             >
-              ›
+              <svg
+                className="new-arrivals__nav-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 18l6-6-6-6"
+                />
+              </svg>
             </button>
           </div>
         )}

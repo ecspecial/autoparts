@@ -62,24 +62,15 @@
   scroll-padding: 0.75rem;
   padding: 1rem 0.75rem 1.25rem;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-color) transparent;
-}
-
-/* Убрать стрелки по краям скроллбара (Chrome / Edge / Safari) */
-.new-arrivals__track::-webkit-scrollbar-button {
-  display: none;
-  width: 0;
-  height: 0;
+  /* Скрыть нативный скроллбар (в т.ч. стрелки WebKit/Edge); прокрутка — кнопками и жестами */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .new-arrivals__track::-webkit-scrollbar {
-  height: 8px;
-}
-
-.new-arrivals__track::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: var(--border-color);
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .new-arrivals__track:focus-visible {
@@ -162,15 +153,20 @@
   border-radius: 50%;
   background: var(--white);
   color: var(--text-primary);
-  font-size: 1.35rem;
-  line-height: 0;
   cursor: pointer;
   align-self: center;
   padding: 0;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.15s, border-color 0.15s;
+}
+
+.new-arrivals__nav-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+  flex-shrink: 0;
 }
 
 .new-arrivals__nav:hover {
