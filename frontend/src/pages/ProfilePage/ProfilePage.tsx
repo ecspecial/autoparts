@@ -201,10 +201,6 @@ const ProfilePage = () => {
                         <div className="profile-form-value">{profile.email}</div>
                       </div>
                       <div className="profile-form-group">
-                        <label className="profile-form-label">Email</label>
-                        <div className="profile-form-value">{profile.email}</div>
-                      </div>
-                      <div className="profile-form-group">
                         <label className="profile-form-label">Телефон</label>
                         <div className="profile-form-value">{profile.phone}</div>
                       </div>
