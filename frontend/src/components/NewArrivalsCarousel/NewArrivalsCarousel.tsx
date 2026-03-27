@@ -12,9 +12,11 @@ function formatCarouselDate(iso: string) {
   return `${day} / ${month}`;
 }
 
+/** В карусели — артикул (article); artKod только если article пуст */
 function displayCode(p: Product) {
-  const k = p.artKod?.trim();
-  return k || p.article;
+  const article = p.article?.trim();
+  if (article) return article;
+  return p.artKod?.trim() || '';
 }
 
 export default function NewArrivalsCarousel() {
