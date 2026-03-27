@@ -3,6 +3,8 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CaptchaService } from './captcha.service';
 
 @ApiTags('Аутентификация')
@@ -45,5 +47,28 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Неверный email или пароль' })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto.email, loginDto.password);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Запрос ссылки на восстановление пароля (капча обязательна)' })
+  @ApiResponse({ status: 200, description: 'Одинаковый ответ независимо от наличия email в базе' })
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    return this.authService.requestPasswordReset({
+      email: body.email,
+      captchaId: body.captchaId,
+      captchaText: body.captchaText,
+    });
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Установить новый пароль по одноразовому токену из письма' })
+  @ApiResponse({ status: 400, description: 'Неверный или просроченный токен' })
+  async resetPassword(@Body() body: ResetPasswordDto) {
+    return this.authService.resetPassword({
+      token: body.token,
+      password: body.password,
+    });
   }
 }

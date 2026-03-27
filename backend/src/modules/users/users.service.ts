@@ -46,6 +46,10 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { id } });
   }
 
+  async updatePasswordHash(userId: number, passwordHash: string): Promise<void> {
+    await this.usersRepository.update({ id: userId }, { passwordHash });
+  }
+
   // Get user profile (safe fields only)
   async getProfile(id: number) {
     const user = await this.usersRepository.findOne({ where: { id } });

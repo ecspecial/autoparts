@@ -26,8 +26,11 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     // Don't redirect on 401 for login/register endpoints
-    const isAuthEndpoint = error.config?.url?.includes('/auth/login') || 
-                          error.config?.url?.includes('/auth/register');
+    const isAuthEndpoint =
+      error.config?.url?.includes('/auth/login') ||
+      error.config?.url?.includes('/auth/register') ||
+      error.config?.url?.includes('/auth/forgot-password') ||
+      error.config?.url?.includes('/auth/reset-password');
     
     if (error.response?.status === 401 && !isAuthEndpoint) {
       // Token expired or invalid - clear it and redirect

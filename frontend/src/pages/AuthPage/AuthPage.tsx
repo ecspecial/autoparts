@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../api/auth';
 import './AuthPage.css';
@@ -176,6 +176,13 @@ function AuthPage() {
               onInput={handleInputClear}
             />
             {mode === 'register' && <small>Минимум 8 символов</small>}
+            {mode === 'login' && (
+              <p style={{ marginTop: '0.5rem', marginBottom: 0 }}>
+                <Link to="/forgot-password" className="mode-link" style={{ fontSize: '0.9rem' }}>
+                  Забыли пароль?
+                </Link>
+              </p>
+            )}
           </div>
 
           {mode === 'register' && (

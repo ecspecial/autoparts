@@ -15,6 +15,8 @@ import AboutPage from './pages/AboutPage/AboutPage';
 import WarrantyPage from './pages/WarrantyPage/WarrantyPage';
 import PersonalDataPage from './pages/PersonalDataPage/PersonalDataPage';
 import AuthPage from './pages/AuthPage/AuthPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage/ResetPasswordPage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 import DownloadsPage from './pages/DownloadsPage/DownloadsPage';
 import NewsPage from './pages/NewsPage/NewsPage';
@@ -41,6 +43,8 @@ function App() {
                 <Route path="/warranty" element={<WarrantyPage />} />
                 <Route path="/personal-data" element={<PersonalDataPage />} />
                 <Route path="/login" element={<AuthPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/downloads" element={<DownloadsPage />} />
                 <Route path="/news" element={<NewsPage />} />
                 <Route path="*" element={<NotFoundPage />} />

@@ -68,6 +68,20 @@ export const authApi = {
       const response = await apiClient.get<CaptchaResponse>('/auth/captcha');
       return response.data;
     },
+
+    forgotPassword: async (data: {
+      email: string;
+      captchaId: string;
+      captchaText: string;
+    }): Promise<{ message: string }> => {
+      const response = await apiClient.post<{ message: string }>('/auth/forgot-password', data);
+      return response.data;
+    },
+
+    resetPassword: async (data: { token: string; password: string }): Promise<{ message: string }> => {
+      const response = await apiClient.post<{ message: string }>('/auth/reset-password', data);
+      return response.data;
+    },
   
     getProfile: async (): Promise<UserProfile> => {
       const response = await apiClient.get<UserProfile>('/users/profile');
