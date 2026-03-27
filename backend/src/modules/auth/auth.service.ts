@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   UnauthorizedException,
   ConflictException,
   BadRequestException,
@@ -20,6 +21,8 @@ const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000; // 1 час
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
@@ -164,6 +167,11 @@ export class AuthService {
     try {
       await this.mailService.sendPasswordResetEmail(user.email, resetLink);
     } catch (e) {
+      const err = e as Error;
+      this.logger.error(
+        `Сброс пароля: отправка не удалась (userId=${user.id}): ${err.message}`,
+        err.stack,
+      );
       await this.passwordResetRepo.delete({ userId: user.id });
       throw new ServiceUnavailableException(
         'Не удалось отправить письмо. Попробуйте позже или обратитесь к администратору.',
