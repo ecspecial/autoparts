@@ -30,6 +30,7 @@ import { MailService } from '../auth/mail.service';
       private cartItemsRepo: Repository<CartItem>,
       @InjectRepository(User)
       private usersRepo: Repository<User>,
+      private mailService: MailService,
     ) {}
   
     private async generateReference(): Promise<string> {
