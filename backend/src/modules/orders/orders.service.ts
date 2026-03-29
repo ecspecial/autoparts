@@ -1,5 +1,6 @@
 import {
     Injectable,
+    Logger,
     NotFoundException,
     BadRequestException,
     ForbiddenException,
@@ -12,9 +13,12 @@ import {
   import { CartItem } from '../cart/entities/cart-item.entity';
   import { User } from '../users/entities/user.entity';
   import { CreateOrderDto } from './dto/create-order.dto';
+import { MailService } from '../auth/mail.service';
   
   @Injectable()
   export class OrdersService {
+    private readonly logger = new Logger(OrdersService.name);
+
     constructor(
       @InjectRepository(Order)
       private ordersRepo: Repository<Order>,
@@ -90,6 +94,26 @@ import {
         relations: ['items'],
       });
       if (!result) throw new NotFoundException('Ошибка при создании заказа');
+
+      void this.mailService
+        .notifyNewSiteOrder({
+          orderId: result.id,
+          reference: result.reference,
+          fullName: user.fullName,
+          email: user.email,
+          phone: user.phone,
+          clientNumber1c: user.clientNumber1c,
+          items: result.items.map((i) => ({
+            article: i.article,
+            name: i.name,
+            quantity: i.quantity,
+            price: Number(i.priceSnapshot),
+          })),
+        })
+        .catch((err) =>
+          this.logger.warn(`Уведомление о заказе не отправлено: ${(err as Error).message}`),
+        );
+
       return result;
     }
   
@@ -118,6 +142,7 @@ import {
         phone: order.user.phone || null,
         order_source: order.orderSource || null,
         delivery_method: order.user.preferredDelivery,
+        delivery_address: order.user.deliveryAddress || null,
         order_reference: order.reference,
         order_id: order.id,
         created_at: order.createdAt,
@@ -145,6 +170,7 @@ import {
         client_number_1c: order.user.clientNumber1c,
         order_source: order.orderSource || null,
         delivery_method: order.user.preferredDelivery,
+        delivery_address: order.user.deliveryAddress || null,
         order_reference: order.reference,
         order_id: order.id,
         order_status: order.status,
@@ -203,6 +229,7 @@ import {
           phone: order.user.phone || null,
           order_source: order.orderSource || null,
           delivery_method: order.user.preferredDelivery,
+          delivery_address: order.user.deliveryAddress || null,
           order_reference: order.reference,
           order_id: order.id,
           order_status: order.status,

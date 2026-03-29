@@ -85,4 +85,89 @@ export class MailService {
       throw err;
     }
   }
+
+  /** Уведомления менеджерам (не бросает ошибку наружу) */
+  private async sendToManager(subject: string, html: string, text: string): Promise<void> {
+    const to = this.config.get<string>('MANAGER_NOTIFY_EMAIL')?.trim();
+    if (!to) {
+      this.logger.debug('MANAGER_NOTIFY_EMAIL не задан — уведомление пропущено');
+      return;
+    }
+    const tx = this.getTransporter();
+    const from = this.config.get<string>('MAIL_FROM') || this.config.get<string>('MAIL_SMTP_USER');
+    if (!tx || !from) {
+      this.logger.warn('Почта не настроена — уведомление менеджеру не отправлено');
+      return;
+    }
+    try {
+      await tx.sendMail({ from, to, subject, html, text });
+      this.logger.log(`Уведомление менеджеру: ${subject} → ${to}`);
+    } catch (err: unknown) {
+      const e = err as Error;
+      this.logger.warn(`Не удалось отправить уведомление менеджеру: ${e.message}`);
+    }
+  }
+
+  async notifyNewRegistration(data: {
+    id: number;
+    email: string;
+    fullName: string;
+    phone: string;
+    entityType: string;
+  }): Promise<void> {
+    const subject = `Новая регистрация на сайте — ${data.fullName || data.email}`;
+    const html = `
+      <p>Зарегистрирован новый пользователь.</p>
+      <ul>
+        <li><strong>ID:</strong> ${data.id}</li>
+        <li><strong>ФИО / организация:</strong> ${escapeHtml(data.fullName)}</li>
+        <li><strong>Email:</strong> ${escapeHtml(data.email)}</li>
+        <li><strong>Телефон:</strong> ${escapeHtml(data.phone)}</li>
+        <li><strong>Тип:</strong> ${data.entityType === 'legal' ? 'Юр. лицо' : 'Физ. лицо'}</li>
+      </ul>
+    `;
+    const text = `Новый пользователь id=${data.id}, ${data.fullName}, ${data.email}, ${data.phone}`;
+    await this.sendToManager(subject, html, text);
+  }
+
+  async notifyNewSiteOrder(data: {
+    orderId: number;
+    reference: string;
+    fullName: string;
+    email: string;
+    phone: string;
+    clientNumber1c: string | null;
+    items: { article: string; name: string; quantity: number; price: number }[];
+  }): Promise<void> {
+    const lines = data.items
+      .map(
+        (i) =>
+          `<tr><td>${escapeHtml(i.article)}</td><td>${escapeHtml(i.name)}</td><td>${i.quantity}</td><td>${i.price}</td></tr>`,
+      )
+      .join('');
+    const subject = `Заказ с сайта ${data.reference} — ${data.fullName || data.email}`;
+    const html = `
+      <p><strong>${escapeHtml(data.fullName)}</strong> оформил заказ на сайте.</p>
+      <p>Номер: <strong>${escapeHtml(data.reference)}</strong> (id ${data.orderId})</p>
+      <p>Email: ${escapeHtml(data.email)} · Телефон: ${escapeHtml(data.phone)}${
+        data.clientNumber1c
+          ? ` · Клиент 1С: ${escapeHtml(data.clientNumber1c)}`
+          : ''
+      }</p>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead><tr><th>Артикул</th><th>Наименование</th><th>Кол-во</th><th>Цена</th></tr></thead>
+        <tbody>${lines}</tbody>
+      </table>
+    `;
+    const text = `Заказ ${data.reference}\n${data.fullName}\n${data.email}\n${data.items.map((i) => `${i.article} x${i.quantity}`).join('\n')}`;
+    await this.sendToManager(subject, html, text);
+  }
+}
+
+function escapeHtml(s: string): string {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }

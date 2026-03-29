@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../api/auth';
@@ -20,6 +20,15 @@ const formatDate = (iso: string) =>
     month: '2-digit',
     year: 'numeric',
   });
+
+/** Счётчик в меню: не учитываем завершённые и отказанные заказы */
+function orderCountsForNavBadge(status: string | null | undefined): boolean {
+  if (status == null || String(status).trim() === '') return true;
+  const s = String(status).trim().toLowerCase();
+  if (s.includes('отказ')) return false;
+  if (s.includes('выдан')) return false;
+  return true;
+}
 
 const ProfilePage = () => {
   const { user, isAuthenticated, refreshProfile } = useAuth();
@@ -46,11 +55,12 @@ const ProfilePage = () => {
   useEffect(() => {
     if (isAuthenticated) {
       loadData();
+      loadOrders();
     }
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (activeTab === 'orders' && isAuthenticated && !ordersLoading) {
+    if (activeTab === 'orders' && isAuthenticated) {
       loadOrders();
     }
   }, [activeTab, isAuthenticated]);
@@ -114,6 +124,11 @@ const ProfilePage = () => {
     }
   };
 
+  const ordersNavBadgeCount = useMemo(
+    () => orders.filter((o) => orderCountsForNavBadge(o.status)).length,
+    [orders],
+  );
+
   const toggleOrder = (orderId: number) => {
     setExpandedOrderIds((prev) => {
       const next = new Set(prev);
@@ -167,8 +182,8 @@ const ProfilePage = () => {
                 }}
               >
                 Мои заказы
-                {orders.length > 0 && (
-                  <span className="orders-nav-badge">{orders.length}</span>
+                {ordersNavBadgeCount > 0 && (
+                  <span className="orders-nav-badge">{ordersNavBadgeCount}</span>
                 )}
               </button>
             </nav>

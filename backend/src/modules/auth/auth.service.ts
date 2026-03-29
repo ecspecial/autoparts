@@ -68,6 +68,18 @@ export class AuthService {
       fullName: dto.fullName.trim(),
       discount: dto.discount,
     });
+
+    void this.mailService
+      .notifyNewRegistration({
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        phone: user.phone,
+        entityType: user.entityType,
+      })
+      .catch((err) =>
+        this.logger.warn(`Уведомление о регистрации не отправлено: ${(err as Error).message}`),
+      );
   
     // 5. Generate JWT
     const payload = { sub: user.id, email: user.email };

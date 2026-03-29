@@ -30,6 +30,6 @@ import { UsersModule } from '../users/users.module';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, CaptchaService, MailService],
-  exports: [AuthService],
+  exports: [AuthService, MailService],
 })
 export class AuthModule {}
