@@ -1,4 +1,4 @@
-import { IsArray, ArrayMinSize, IsInt } from 'class-validator';
+import { IsArray, ArrayMinSize, IsInt, IsBoolean, Equals } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateOrderDto {
@@ -7,4 +7,10 @@ export class CreateOrderDto {
   @IsInt({ each: true })
   @Type(() => Number)
   cartItemIds: number[];
+
+  @IsBoolean()
+  @Equals(true, {
+    message: 'Необходимо согласие на обработку персональных данных',
+  })
+  personalDataConsent: boolean;
 }

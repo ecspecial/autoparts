@@ -8,6 +8,7 @@ import type { DeliveryMethod } from '../../api/delivery';
 import type { UserProfile } from '../../api/auth';
 import type { Order } from '../../api/orders';
 import { getOrderItemUnitPrice } from '../../utils/orderItemPrice';
+import { PersonalDataConsentField } from '../../components/PersonalDataConsentField/PersonalDataConsentField';
 import './ProfilePage.css';
 
 type ActiveTab = 'profile' | 'orders';
@@ -46,6 +47,8 @@ const ProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
+  /** Для аккаунтов без отметки согласия в БД (до миграции / сохранения). */
+  const [deliveryPdConsent, setDeliveryPdConsent] = useState(false);
 
   // Orders tab state
   const [orders, setOrders] = useState<Order[]>([]);
@@ -89,6 +92,10 @@ const ProfilePage = () => {
     }
   };
 
+  useEffect(() => {
+    setDeliveryPdConsent(false);
+  }, [profile?.id, profile?.personalDataConsentAt]);
+
   const loadOrders = async () => {
     setOrdersLoading(true);
     try {
@@ -106,14 +113,29 @@ const ProfilePage = () => {
     setSaving(true);
     setSaveMessage('');
     try {
+      const hasStoredPdConsent = Boolean(profile?.personalDataConsentAt);
+      if (!hasStoredPdConsent && !deliveryPdConsent) {
+        setSaveMessage('Необходимо согласие на обработку персональных данных');
+        setSaving(false);
+        return;
+      }
+      const consentPayload = Boolean(hasStoredPdConsent || deliveryPdConsent);
+
       const deliveryMethod = deliveryMethods.find((m) => m.code1c === selectedDelivery);
-      await authApi.updateDelivery(selectedDelivery, deliveryMethod?.name || '');
+      await authApi.updateDelivery(
+        selectedDelivery,
+        deliveryMethod?.name || '',
+        consentPayload,
+      );
       if (deliveryMethod && !deliveryMethod.name.includes('САМОВЫВОЗ')) {
-        await authApi.updateDeliveryAddress(deliveryAddress || null);
+        await authApi.updateDeliveryAddress(deliveryAddress || null, consentPayload);
       } else {
-        await authApi.updateDeliveryAddress(null);
+        await authApi.updateDeliveryAddress(null, consentPayload);
       }
       await refreshProfile();
+      const refreshed = await authApi.getProfile();
+      setProfile(refreshed);
+      setDeliveryAddress(refreshed.deliveryAddress || '');
       setSaveMessage('Данные доставки сохранены');
       setTimeout(() => setSaveMessage(''), 3000);
     } catch (error) {
@@ -251,6 +273,14 @@ const ProfilePage = () => {
                         <div className="profile-form-value">{profile.discount}%</div>
                       </div>
                       <div className="profile-form-group">
+                        <label className="profile-form-label">API-ключ</label>
+                        <div
+                          className={`profile-form-value${profile.apiKey ? ' profile-api-key' : ' profile-api-key--empty'}`}
+                        >
+                          {profile.apiKey ?? 'Не назначен'}
+                        </div>
+                      </div>
+                      <div className="profile-form-group">
                         <label className="profile-form-label">Доставка</label>
                         <select
                           className="profile-form-select"
@@ -283,6 +313,18 @@ const ProfilePage = () => {
                             />
                           </div>
                         )}
+                      {profile.personalDataConsentAt ? (
+                        <p className="profile-pd-consent-done">
+                          Согласие на обработку персональных данных зафиксировано{' '}
+                          {formatDate(profile.personalDataConsentAt)}.
+                        </p>
+                      ) : (
+                        <PersonalDataConsentField
+                          id="profile-pd-consent"
+                          checked={deliveryPdConsent}
+                          onChange={setDeliveryPdConsent}
+                        />
+                      )}
                     </div>
                   </div>
 
@@ -291,7 +333,13 @@ const ProfilePage = () => {
                       {saving ? 'Сохранение...' : 'Сохранить доставку'}
                     </button>
                     {saveMessage && (
-                      <span className={`profile-save-message ${saveMessage.includes('Ошибка') ? 'error' : ''}`}>
+                      <span
+                        className={`profile-save-message ${
+                          saveMessage.includes('Ошибка') || saveMessage.includes('Необходимо')
+                            ? 'error'
+                            : ''
+                        }`}
+                      >
                         {saveMessage}
                       </span>
                     )}

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, Not } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -38,6 +43,7 @@ export class UsersService {
       balance: 0,
       isActive: false,
       clientNumber1c: null,
+      personalDataProcessingConsentAt: new Date(),
     });
     return this.usersRepository.save(user);
   }
@@ -66,15 +72,36 @@ export class UsersService {
       clientNumber1c: user.clientNumber1c,
       preferredDelivery: user.preferredDelivery,
       deliveryAddress: user.deliveryAddress,
+      apiKey: user.apiKey,
+      personalDataConsentAt: user.personalDataProcessingConsentAt?.toISOString() ?? null,
       createdAt: user.createdAt,
     };
   }
 
+  private ensurePersonalDataConsentRecorded(user: User, consentAcknowledged?: boolean): void {
+    if (user.personalDataProcessingConsentAt != null) {
+      return;
+    }
+    if (!consentAcknowledged) {
+      throw new BadRequestException(
+        'Необходимо согласие на обработку персональных данных',
+      );
+    }
+    user.personalDataProcessingConsentAt = new Date();
+  }
+
   // Update delivery method by user
-  async updateDelivery(userId: number, deliveryCode: string, deliveryName?: string): Promise<void> {
+  async updateDelivery(
+    userId: number,
+    deliveryCode: string,
+    deliveryName?: string,
+    personalDataConsent?: boolean,
+  ): Promise<void> {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('Пользователь не найден');
-    
+
+    this.ensurePersonalDataConsentRecorded(user, personalDataConsent);
+
     user.preferredDelivery = deliveryCode;
     
     // If delivery contains "САМОВЫВОЗ", clear address
@@ -85,10 +112,16 @@ export class UsersService {
     await this.usersRepository.save(user);
   }
 
-  async updateDeliveryAddress(userId: number, address: string | null): Promise<void> {
+  async updateDeliveryAddress(
+    userId: number,
+    address: string | null,
+    personalDataConsent?: boolean,
+  ): Promise<void> {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('Пользователь не найден');
-    
+
+    this.ensurePersonalDataConsentRecorded(user, personalDataConsent);
+
     user.deliveryAddress = address;
     await this.usersRepository.save(user);
   }
@@ -132,6 +165,30 @@ export class UsersService {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('Пользователь не найден');
     user.balance = balance;
+    return this.usersRepository.save(user);
+  }
+
+  /** Справочное значение скидки для ЛК клиента (не участвует в расчёте цен на сайте). */
+  async updateClientDiscount(userId: number, discount: number): Promise<User> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    user.discount = discount;
+    return this.usersRepository.save(user);
+  }
+
+  /** Установить API-ключ клиенту (значение формирует администратор; уникально в таблице). */
+  async updateUserApiKey(userId: number, apiKey: string): Promise<User> {
+    const key = apiKey.trim();
+    if (!key) {
+      throw new BadRequestException('API-ключ не может быть пустым');
+    }
+    const other = await this.usersRepository.findOne({ where: { apiKey: key } });
+    if (other && other.id !== userId) {
+      throw new ConflictException('Этот API-ключ уже присвоен другому пользователю');
+    }
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    user.apiKey = key;
     return this.usersRepository.save(user);
   }
 }

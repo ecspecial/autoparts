@@ -122,10 +122,43 @@
     margin-bottom: 0.25rem;
   }
   
+  .contacts-yandex-route--mobile-only {
+    display: none;
+  }
+
+  .contacts-yandex-route-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1rem;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--white);
+    background: var(--primary-blue);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.2s;
+  }
+
+  .contacts-yandex-route-btn:hover {
+    background: var(--primary-blue-hover);
+    color: var(--white);
+    text-decoration: none;
+  }
+
+  .contacts-yandex-route-btn:active {
+    transform: scale(0.98);
+  }
+
   /* Tablet */
   @media (max-width: 768px) {
     .contacts-two-col {
       grid-template-columns: 1fr;
+    }
+
+    .contacts-yandex-route--mobile-only {
+      display: block;
     }
   }
   

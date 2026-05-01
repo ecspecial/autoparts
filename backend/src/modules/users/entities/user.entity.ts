@@ -43,6 +43,24 @@ import {
     @Column({ name: 'delivery_address', type: 'text', nullable: true })
     deliveryAddress: string | null;
 
+    /** Ключ для внешних интеграций; отображается в ЛК; назначает администратор. */
+    @Column({
+      type: 'varchar',
+      name: 'api_key',
+      length: 512,
+      nullable: true,
+      unique: true,
+    })
+    apiKey: string | null = null;
+
+    /** Зафиксированное согласие на обработку ПД (регистрация или сохранение в ЛК с чекбоксом). */
+    @Column({
+      type: 'timestamptz',
+      name: 'personal_data_processing_consent_at',
+      nullable: true,
+    })
+    personalDataProcessingConsentAt: Date | null = null;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
   }

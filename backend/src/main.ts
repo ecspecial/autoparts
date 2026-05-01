@@ -11,7 +11,7 @@ async function bootstrap() {
     // Используем Fastify вместо Express
     const app = await NestFactory.create<NestFastifyApplication>(
         AppModule,
-        new FastifyAdapter(),
+        new FastifyAdapter({ trustProxy: true }),
     );
 
     // Глобальная валидация

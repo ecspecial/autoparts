@@ -11,7 +11,9 @@ import {
     UnauthorizedException,
   } from '@nestjs/common';
   import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
-  import { UsersService } from './users.service';
+import { UsersService } from './users.service';
+import { SetClientDiscountDto } from './dto/set-client-discount.dto';
+import { SetUserApiKeyDto } from './dto/set-user-api-key.dto';
   
   @ApiTags('Администрирование пользователей')
   @Controller('admin/users')
@@ -60,6 +62,7 @@ import {
         fullName: u.fullName,
         balance: Number(u.balance),
         discount: u.discount,
+        hasApiKey: !!u.apiKey,
         isActive: u.isActive,
         clientNumber1c: u.clientNumber1c,
         createdAt: u.createdAt,
@@ -137,6 +140,39 @@ import {
       return {
         message: `Баланс обновлен`,
         user: { id: user.id, email: user.email, balance: Number(user.balance) },
+      };
+    }
+
+    @Post(':id/discount')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+      summary:
+        'Установить справочную скидку для личного кабинета (отображение для клиента; на расчёт цены на сайте не влияет)',
+    })
+    async setClientDiscount(
+      @Param('id', ParseIntPipe) id: number,
+      @Body() body: SetClientDiscountDto,
+    ) {
+      this.checkPassword(body.password);
+      const user = await this.usersService.updateClientDiscount(id, body.discount);
+      return {
+        message: `Скидка для отображения в ЛК установлена: ${body.discount}%`,
+        user: { id: user.id, email: user.email, discount: user.discount },
+      };
+    }
+
+    @Post(':id/api-key')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Задать пользователю API-ключ (значение передаётся целиком; формируется вручную)' })
+    async setUserApiKey(
+      @Param('id', ParseIntPipe) id: number,
+      @Body() body: SetUserApiKeyDto,
+    ) {
+      this.checkPassword(body.password);
+      const user = await this.usersService.updateUserApiKey(id, body.apiKey);
+      return {
+        message: 'API-ключ сохранён',
+        user: { id: user.id, email: user.email, apiKey: user.apiKey },
       };
     }
   }

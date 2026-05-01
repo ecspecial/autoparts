@@ -45,6 +45,9 @@ export interface UserProfile {
   clientNumber1c: string | null;
   preferredDelivery: string | null;
   deliveryAddress: string | null;
+  apiKey?: string | null;
+  /** ISO; при регистрации до миграции может отсутствовать — интерпретировать как нужно сохранить согласие в ЛК. */
+  personalDataConsentAt?: string | null;
   createdAt: string;
 }
 
@@ -88,11 +91,25 @@ export const authApi = {
       return response.data;
     },
   
-    updateDelivery: async (deliveryCode: string, deliveryName: string): Promise<void> => {
-      await apiClient.patch('/users/delivery', { deliveryCode, deliveryName });
+    updateDelivery: async (
+      deliveryCode: string,
+      deliveryName: string,
+      personalDataConsent?: boolean,
+    ): Promise<void> => {
+      await apiClient.patch('/users/delivery', {
+        deliveryCode,
+        deliveryName,
+        personalDataConsent,
+      });
     },
-  
-    updateDeliveryAddress: async (address: string | null): Promise<void> => {
-      await apiClient.patch('/users/delivery-address', { address });
+
+    updateDeliveryAddress: async (
+      address: string | null,
+      personalDataConsent?: boolean,
+    ): Promise<void> => {
+      await apiClient.patch('/users/delivery-address', {
+        address,
+        personalDataConsent,
+      });
     },
   };

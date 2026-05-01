@@ -20,6 +20,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage/ResetPasswordPage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 import DownloadsPage from './pages/DownloadsPage/DownloadsPage';
 import NewsPage from './pages/NewsPage/NewsPage';
+import CookieConsentBanner from './components/CookieConsentBanner/CookieConsentBanner';
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
                 </Routes>
             </main>
             <Footer />
+            <CookieConsentBanner />
             </div>
         </CartProvider>
       </AuthProvider>

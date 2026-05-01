@@ -24,8 +24,14 @@ export interface Order {
 }
 
 export const ordersApi = {
-  createOrder: async (cartItemIds: number[]): Promise<Order> => {
-    const response = await apiClient.post<Order>('/orders', { cartItemIds });
+  createOrder: async (
+    cartItemIds: number[],
+    personalDataConsent: boolean,
+  ): Promise<Order> => {
+    const response = await apiClient.post<Order>('/orders', {
+      cartItemIds,
+      personalDataConsent,
+    });
     return response.data;
   },
 

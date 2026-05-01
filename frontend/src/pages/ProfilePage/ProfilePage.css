@@ -405,6 +405,16 @@
     border-radius: 10px;
     color: var(--text-primary);
   }
+
+  .profile-api-key {
+    font-family: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.875rem;
+    word-break: break-all;
+  }
+
+  .profile-api-key--empty {
+    color: var(--text-secondary);
+  }
   
   .profile-status-badge {
     padding: 0.625rem 1.25rem;
@@ -440,6 +450,17 @@
   
   .profile-save-message.error {
     color: #dc2626;
+  }
+
+  .profile-pd-consent-done {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    background: var(--bg-gray);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    line-height: 1.45;
   }
   
 /* Tablet */

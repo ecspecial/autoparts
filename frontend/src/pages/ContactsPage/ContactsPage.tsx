@@ -80,6 +80,16 @@ const ContactsPage = () => {
               <div>
                 <h3 className="contact-row-label">Адрес</h3>
                 <p className="contact-row-value">г. Екатеринбург, ул. Бархотская 2/2</p>
+                <div className="contacts-yandex-route contacts-yandex-route--mobile-only">
+                  <a
+                    href="https://yandex.ru/maps/?rtext=~56.860575,60.666519"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="contacts-yandex-route-btn"
+                  >
+                    Проложить маршрут на карте
+                  </a>
+                </div>
               </div>
             </div>
 

@@ -12,6 +12,7 @@ import { CrossReferenceModule } from './modules/cross-reference/cross-reference.
 import { DeliveryModule } from './modules/delivery/delivery.module';
 import { NewsModule } from './modules/news/news.module';
 import { OrdersModule } from './modules/orders/orders.module'; // ← ADD
+import { ConsentsModule } from './modules/consents/consents.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { OrdersModule } from './modules/orders/orders.module'; // ← ADD
     DeliveryModule,
     NewsModule,
     OrdersModule,
+    ConsentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

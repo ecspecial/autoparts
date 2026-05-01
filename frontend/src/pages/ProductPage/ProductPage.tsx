@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useCart } from '../../context/CartContext';
-import { useParams, Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { productsApi } from '../../api/products';
 import type { Product } from '../../api/products';
 import './ProductPage.css';
@@ -13,6 +14,8 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [addingToCart, setAddingToCart] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -67,7 +70,12 @@ export default function ProductPage() {
 
   const handleAddToCart = async () => {
     if (!product || addingToCart) return;
-  
+
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
     setAddingToCart(true);
     const startTime = Date.now();
     

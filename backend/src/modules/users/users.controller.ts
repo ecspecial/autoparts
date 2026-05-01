@@ -29,9 +29,19 @@ import {
     @ApiOperation({ summary: 'Обновить способ доставки пользователя' })
     async updateDelivery(
     @Request() req,
-    @Body() body: { deliveryCode: string; deliveryName?: string },
+    @Body()
+    body: {
+      deliveryCode: string;
+      deliveryName?: string;
+      personalDataConsent?: boolean;
+    },
     ) {
-    await this.usersService.updateDelivery(req.user.id, body.deliveryCode, body.deliveryName);
+    await this.usersService.updateDelivery(
+      req.user.id,
+      body.deliveryCode,
+      body.deliveryName,
+      body.personalDataConsent,
+    );
     return { message: 'Способ доставки обновлен' };
     }
 
@@ -41,9 +51,13 @@ import {
     @ApiOperation({ summary: 'Обновить адрес доставки' })
     async updateDeliveryAddress(
     @Request() req,
-    @Body() body: { address: string | null },
+    @Body() body: { address: string | null; personalDataConsent?: boolean },
     ) {
-    await this.usersService.updateDeliveryAddress(req.user.id, body.address);
+    await this.usersService.updateDeliveryAddress(
+      req.user.id,
+      body.address,
+      body.personalDataConsent,
+    );
     return { message: 'Адрес доставки обновлен' };
     }
   }

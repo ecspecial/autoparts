@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { ordersApi } from '../../api/orders';
+import { PersonalDataConsentField } from '../../components/PersonalDataConsentField/PersonalDataConsentField';
 import './CartPage.css';
 
 const CartPage = () => {
@@ -13,6 +14,7 @@ const CartPage = () => {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
+  const [checkoutPdConsent, setCheckoutPdConsent] = useState(false);
 
   // Sync selection when cart changes (auto-select newly added items)
   useEffect(() => {
@@ -96,11 +98,15 @@ const CartPage = () => {
       return;
     }
     if (selectedIds.size === 0) return;
+    if (!checkoutPdConsent) {
+      setCheckoutError('Необходимо согласие на обработку персональных данных');
+      return;
+    }
 
     setIsCheckingOut(true);
     setCheckoutError('');
     try {
-      await ordersApi.createOrder(Array.from(selectedIds));
+      await ordersApi.createOrder(Array.from(selectedIds), true);
       await refreshCart();
       navigate('/profile', { state: { tab: 'orders', orderJustPlaced: true } });
     } catch (err: any) {
@@ -273,10 +279,26 @@ const CartPage = () => {
                 <div className="cart-checkout-error">{checkoutError}</div>
               )}
 
+              {isAuthenticated && (
+                <PersonalDataConsentField
+                  variant="cart"
+                  id="cart-checkout-pd-consent"
+                  checked={checkoutPdConsent}
+                  onChange={(v) => {
+                    setCheckoutPdConsent(v);
+                    if (checkoutError) setCheckoutError('');
+                  }}
+                />
+              )}
+
               <button
                 className="cart-checkout-btn"
                 onClick={handleCheckout}
-                disabled={selectedIds.size === 0 || isCheckingOut}
+                disabled={
+                  selectedIds.size === 0 ||
+                  isCheckingOut ||
+                  (isAuthenticated && !checkoutPdConsent)
+                }
               >
                 {isCheckingOut
                   ? 'Оформление...'
