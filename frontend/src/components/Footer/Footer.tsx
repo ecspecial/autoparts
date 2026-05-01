@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import maxIcon from '../../assets/MAX.svg';
 import './Footer.css';
+
+/** Файл из `public/icons/max.svg` — копируется в корень dist при сборке, без хэша в URL. */
 
 /** Ссылка-приглашение в MAX; задайте VITE_MAX_CONTACT_URL в .env (например https://max.ru/join/...) */
 const MAX_CONTACT_HREF =
@@ -76,7 +77,7 @@ const Footer = () => {
               aria-label="MAX"
               title="Написать в MAX"
             >
-              <img src={maxIcon} alt="" width={22} height={22} className="footer-social-max-icon" />
+              <img src="/icons/max.svg" alt="" width={22} height={22} className="footer-social-max-icon" />
             </a>
           </div>
         </div>
