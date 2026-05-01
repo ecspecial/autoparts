@@ -152,15 +152,30 @@
   height: 20px;
 }
 
-.footer-social-max-icon {
-  display: block;
-  width: 22px;
-  height: 22px;
-  object-fit: contain;
+.footer-social a.footer-social-max-btn {
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.footer-social a:hover .footer-social-max-icon {
-  filter: brightness(0) invert(1);
+.footer-social a.footer-social-max-btn:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.footer-social .footer-social-max-svg {
+  display: block;
+  width: 26px !important;
+  height: 26px !important;
+  flex-shrink: 0;
+}
+
+.footer-social-max-btn.footer-social-max-btn:hover .footer-social-max-svg rect {
+  filter: brightness(1.06);
 }
 
 .footer-payment {
