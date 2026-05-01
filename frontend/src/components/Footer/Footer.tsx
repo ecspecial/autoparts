@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import './Footer.css';
 
 /** Ссылка-приглашение в MAX; задайте VITE_MAX_CONTACT_URL в .env (например https://max.ru/join/...) */
-const MAX_CONTACT_HREF =
+const MAX_CONTACT_HREF = "https://max.ru/u/f9LHodD0cOIaEIgwT_5GFd6lQnBd-X01QzawHH2ZqSv4X0s34SyxbBoEJj0";
   (import.meta.env.VITE_MAX_CONTACT_URL as string | undefined)?.trim() || 'https://max.ru/';
 
 const Footer = () => {
