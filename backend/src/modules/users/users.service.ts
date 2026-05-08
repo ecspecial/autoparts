@@ -5,7 +5,9 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, Not } from 'typeorm';
+import { Repository, IsNull, Not, QueryFailedError } from 'typeorm';
+import { randomBytes } from 'crypto';
+import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 
 @Injectable()
@@ -190,5 +192,100 @@ export class UsersService {
     if (!user) throw new NotFoundException('Пользователь не найден');
     user.apiKey = key;
     return this.usersRepository.save(user);
+  }
+
+  /** Поиск клиента для Django-моста (логин из API, email/1С или стабильный Django id). */
+  async findForDjangoBridgePartner(
+    partnerLogin: string,
+    legacyUserId?: number | null,
+  ): Promise<User | null> {
+    const trimmed = String(partnerLogin ?? '').trim();
+    const qb = this.usersRepository.createQueryBuilder('u');
+    const parts: string[] = [];
+    const params: Record<string, unknown> = {};
+
+    if (trimmed) {
+      parts.push('u.partner_legacy_login = :trimmed');
+      parts.push('LOWER(TRIM(u.email)) = LOWER(:trimmed)');
+      parts.push(
+        '(u.client_number_1c IS NOT NULL AND TRIM(u.client_number_1c) = :trimmed)',
+      );
+      params.trimmed = trimmed;
+    }
+
+    if (legacyUserId != null && Number.isFinite(Number(legacyUserId))) {
+      parts.push('u.django_legacy_user_id = :lid');
+      params.lid = Number(legacyUserId);
+    }
+
+    if (parts.length === 0) {
+      return null;
+    }
+
+    qb.where(`(${parts.join(' OR ')})`, params);
+    return qb.getOne();
+  }
+
+  /**
+   * Авто-создание записи клиента из доверенных данных Django (без вымышленной почты и т.п.).
+   */
+  async provisionPartnerFromDjangoBridge(params: {
+    partnerLogin: string;
+    legacyUserId?: number | null;
+    legacyDiscount?: number | null;
+  }): Promise<User> {
+    const login = params.partnerLogin.trim();
+    if (!login) {
+      throw new BadRequestException('partner_login пуст');
+    }
+
+    const discount = Math.max(
+      0,
+      Math.min(100, Math.round(Number(params.legacyDiscount ?? 0))),
+    );
+
+    const rnd = randomBytes(32).toString('hex');
+    const passwordHash = await bcrypt.hash(rnd, 10);
+
+    const djangoId =
+      params.legacyUserId != null && Number.isFinite(Number(params.legacyUserId))
+        ? Number(params.legacyUserId)
+        : null;
+
+    const user = this.usersRepository.create({
+      passwordHash,
+      phone: '',
+      email: null,
+      entityType: 'individual',
+      fullName: '',
+      discount,
+      balance: 0,
+      isActive: true,
+      clientNumber1c: null,
+      partnerLegacyLogin: login,
+      djangoLegacyUserId: djangoId,
+      personalDataProcessingConsentAt: null,
+      preferredDelivery: null,
+      deliveryAddress: null,
+      apiKey: null,
+    });
+
+    try {
+      return await this.usersRepository.save(user);
+    } catch (e) {
+      if (
+        e instanceof QueryFailedError &&
+        typeof (e as QueryFailedError & { driverError?: { code?: string } })
+          .driverError === 'object' &&
+        (e as QueryFailedError & { driverError?: { code?: string } }).driverError
+          ?.code === '23505'
+      ) {
+        const again = await this.findForDjangoBridgePartner(login, djangoId);
+        if (again) {
+          return again;
+        }
+      }
+      throw e;
+    }
   }
 }

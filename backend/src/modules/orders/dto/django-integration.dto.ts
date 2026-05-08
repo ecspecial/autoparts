@@ -3,6 +3,8 @@ import {
   IsArray,
   ArrayNotEmpty,
   IsInt,
+  Max,
+  Min,
   IsOptional,
   IsString,
   ValidateNested,
@@ -44,6 +46,20 @@ export class DjangoBridgeCreateOrderDto {
   /** Передаётся из legacy Django; сохранение в заказ пока не дублируем. */
   @IsOptional()
   delivery?: number | string;
+
+  /** Django `Users.id` после проверки пароля — для авто-создания клиента и связки. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  legacy_user_id?: number;
+
+  /** Django `Users.dis` — скидка при создании клиента автоматически. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  legacy_discount?: number;
 }
 
 export class DjangoBridgeOrderDetailsDto {
@@ -56,4 +72,9 @@ export class DjangoBridgeOrderDetailsDto {
   @Type(() => Number)
   @IsInt()
   order_id: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  legacy_user_id?: number;
 }

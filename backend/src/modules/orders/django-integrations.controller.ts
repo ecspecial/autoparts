@@ -51,10 +51,12 @@ export class DjangoIntegrationsOrdersController {
   @HttpCode(HttpStatus.CREATED)
   async createOrder(@Body() body: DjangoBridgeCreateOrderDto) {
     this.assertBridgeSecret(body.bridge_secret);
-    const orderId = await this.ordersService.createOrderFromDjangoBridge(
-      body.partner_login,
-      body.order,
-    );
+    const orderId = await this.ordersService.createOrderFromDjangoBridge({
+      partnerLogin: body.partner_login,
+      lines: body.order,
+      legacyUserId: body.legacy_user_id,
+      legacyDiscount: body.legacy_discount,
+    });
     return { code: '0', message: 'Ok', order_id: orderId };
   }
 
@@ -66,6 +68,7 @@ export class DjangoIntegrationsOrdersController {
       body.partner_login,
       body.order_id,
       'classic',
+      body.legacy_user_id,
     );
   }
 
@@ -77,6 +80,7 @@ export class DjangoIntegrationsOrdersController {
       body.partner_login,
       body.order_id,
       'market',
+      body.legacy_user_id,
     );
   }
 }

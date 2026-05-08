@@ -18,6 +18,7 @@ import {
   import { CreateOrderDto } from './dto/create-order.dto';
   import type { DjangoBridgeOrderLineDto } from './dto/django-integration.dto';
 import { MailService } from '../auth/mail.service';
+import { UsersService } from '../users/users.service';
   
   @Injectable()
   export class OrdersService {
@@ -39,6 +40,7 @@ import { MailService } from '../auth/mail.service';
       @InjectDataSource()
       private readonly dataSource: DataSource,
       private mailService: MailService,
+      private usersService: UsersService,
     ) {}
   
     private async generateReference(): Promise<string> {
@@ -109,7 +111,7 @@ import { MailService } from '../auth/mail.service';
           orderId: result.id,
           reference: result.reference,
           fullName: user.fullName,
-          email: user.email,
+          email: user.email ?? '',
           phone: user.phone,
           clientNumber1c: user.clientNumber1c,
           items: result.items.map((i) => ({
@@ -272,6 +274,12 @@ import { MailService } from '../auth/mail.service';
       return this.orderItemsRepo.save(item);
     }
 
+    /** Пользователь партнёрского API: partner_legacy_login, email или код 1С. */
+    private djangoBridgeAutoProvisionEnabled(): boolean {
+      const v = (process.env.DJANGO_BRIDGE_AUTO_PROVISION ?? 'true').toLowerCase();
+      return !['0', 'false', 'no'].includes(v);
+    }
+
     private normalizePartnerLineQty(line: DjangoBridgeOrderLineDto): number {
       const raw = line.quantity ?? line.qty;
       if (raw === undefined || raw === null || raw === '') {
@@ -279,23 +287,6 @@ import { MailService } from '../auth/mail.service';
       }
       const n = typeof raw === 'string' ? parseInt(raw, 10) : Number(raw);
       return Number.isFinite(n) ? n : NaN;
-    }
-
-    /** Пользователь партнёрского API: partner_legacy_login, email или код 1С. */
-    async findNestUserForPartnerLegacyLogin(login: string): Promise<User | null> {
-      const trimmed = String(login ?? '').trim();
-      if (!trimmed) return null;
-
-      const row = await this.usersRepo
-        .createQueryBuilder('u')
-        .where('u.partner_legacy_login = :trimmed', { trimmed })
-        .orWhere('LOWER(TRIM(u.email)) = LOWER(:trimmed)', { trimmed })
-        .orWhere(
-          '(u.client_number_1c IS NOT NULL AND TRIM(u.client_number_1c) = :trimmed)',
-          { trimmed },
-        )
-        .getOne();
-      return row ?? null;
     }
 
     private async findCatalogProductByArticle(rawArticle: string): Promise<Product | null> {
@@ -323,11 +314,27 @@ import { MailService } from '../auth/mail.service';
      * Создание заказа из legacy Django (после проверки login/password в Django).
      * order_source = API.
      */
-    async createOrderFromDjangoBridge(
-      partnerLogin: string,
-      lines: DjangoBridgeOrderLineDto[],
-    ): Promise<number> {
-      const user = await this.findNestUserForPartnerLegacyLogin(partnerLogin);
+    async createOrderFromDjangoBridge(params: {
+      partnerLogin: string;
+      lines: DjangoBridgeOrderLineDto[];
+      legacyUserId?: number;
+      legacyDiscount?: number;
+    }): Promise<number> {
+      const { partnerLogin, lines, legacyUserId, legacyDiscount } = params;
+
+      let user = await this.usersService.findForDjangoBridgePartner(
+        partnerLogin,
+        legacyUserId,
+      );
+
+      if (!user && this.djangoBridgeAutoProvisionEnabled()) {
+        user = await this.usersService.provisionPartnerFromDjangoBridge({
+          partnerLogin,
+          legacyUserId,
+          legacyDiscount,
+        });
+      }
+
       if (!user) {
         throw new HttpException(
           { code: '1003', message: 'Указан не правильный пользователь ' },
@@ -436,7 +443,7 @@ import { MailService } from '../auth/mail.service';
           orderId: result.id,
           reference: result.reference,
           fullName: user.fullName,
-          email: user.email,
+          email: user.email ?? '',
           phone: user.phone,
           clientNumber1c: user.clientNumber1c,
           orderSource: 'API',
@@ -463,8 +470,12 @@ import { MailService } from '../auth/mail.service';
       partnerLogin: string,
       orderId: number,
       variant: 'classic' | 'market',
+      legacyUserId?: number,
     ): Promise<Record<string, unknown>> {
-      const user = await this.findNestUserForPartnerLegacyLogin(partnerLogin);
+      const user = await this.usersService.findForDjangoBridgePartner(
+        partnerLogin,
+        legacyUserId,
+      );
       if (!user) {
         throw new HttpException(
           { code: '1003', message: 'Указан не правильный пользователь ' },

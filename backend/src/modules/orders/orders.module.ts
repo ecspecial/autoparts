@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
+import { UsersModule } from '../users/users.module';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { Cart } from '../cart/entities/cart.entity';
@@ -15,6 +16,7 @@ import { DjangoIntegrationsOrdersController } from './django-integrations.contro
   imports: [
     TypeOrmModule.forFeature([Order, OrderItem, Cart, CartItem, User, Product]),
     AuthModule,
+    UsersModule,
   ],
   controllers: [OrdersController, DjangoIntegrationsOrdersController],
   providers: [OrdersService],

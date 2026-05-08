@@ -134,7 +134,7 @@ export class MailService {
     orderId: number;
     reference: string;
     fullName: string;
-    email: string;
+    email: string | null;
     phone: string;
     clientNumber1c: string | null;
     /** 'site' по умолчанию; 'API' для партнёрских заказов через Django bridge. */
@@ -148,11 +148,11 @@ export class MailService {
       )
       .join('');
     const source = data.orderSource === 'API' ? ' (API)' : ' с сайта';
-    const subject = `Заказ${source} ${data.reference} — ${data.fullName || data.email}`;
+    const subject = `Заказ${source} ${data.reference} — ${data.fullName || data.email || 'API-клиент'}`;
     const html = `
       <p><strong>${escapeHtml(data.fullName)}</strong> оформил заказ${data.orderSource === 'API' ? ' через партнёрское API' : ' на сайте'}.</p>
       <p>Номер: <strong>${escapeHtml(data.reference)}</strong> (id ${data.orderId})</p>
-      <p>Email: ${escapeHtml(data.email)} · Телефон: ${escapeHtml(data.phone)}${
+      <p>Email: ${data.email ? escapeHtml(data.email) : '—'} · Телефон: ${escapeHtml(data.phone)}${
         data.clientNumber1c
           ? ` · Клиент 1С: ${escapeHtml(data.clientNumber1c)}`
           : ''
@@ -162,7 +162,7 @@ export class MailService {
         <tbody>${lines}</tbody>
       </table>
     `;
-    const text = `Заказ ${data.reference}\n${data.fullName}\n${data.email}\n${data.items.map((i) => `${i.article} x${i.quantity}`).join('\n')}`;
+    const text = `Заказ ${data.reference}\n${data.fullName}\n${data.email ?? ''}\n${data.items.map((i) => `${i.article} x${i.quantity}`).join('\n')}`;
     await this.sendToManager(subject, html, text);
   }
 }

@@ -22,8 +22,8 @@ import {
     @Column({ length: 20, default: '' })
     phone: string;
   
-    @Column({ length: 200, default: '', unique: true })
-    email: string;
+    @Column({ type: 'varchar', length: 200, nullable: true, unique: true })
+    email: string | null = null;
   
     @Column({ name: 'entity_type', length: 20, default: 'individual' })
     entityType: string; // 'individual' | 'legal'
@@ -62,6 +62,15 @@ import {
       unique: true,
     })
     partnerLegacyLogin: string | null = null;
+
+    /** Первичный ключ партнёра в Django `Users.id` (для связки без синтетических полей). */
+    @Column({
+      type: 'integer',
+      name: 'django_legacy_user_id',
+      nullable: true,
+      unique: true,
+    })
+    djangoLegacyUserId: number | null = null;
 
     /** Зафиксированное согласие на обработку ПД (регистрация или сохранение в ЛК с чекбоксом). */
     @Column({

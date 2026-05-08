@@ -72,7 +72,7 @@ export class AuthService {
     void this.mailService
       .notifyNewRegistration({
         id: user.id,
-        email: user.email,
+        email: normalizedEmail,
         fullName: user.fullName,
         phone: user.phone,
         entityType: user.entityType,
@@ -82,7 +82,7 @@ export class AuthService {
       );
   
     // 5. Generate JWT
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, email: normalizedEmail };
     const accessToken = this.jwtService.sign(payload);
   
     return {
@@ -95,7 +95,7 @@ export class AuthService {
         entityType: user.entityType,
         fullName: user.fullName,
         phone: user.phone,
-        email: user.email,
+        email: normalizedEmail,
         createdAt: user.createdAt,
       },
     };
@@ -114,7 +114,7 @@ export class AuthService {
       throw new UnauthorizedException('Неверный email или пароль');
     }
   
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, email: user.email ?? '' };
     const accessToken = this.jwtService.sign(payload);
   
     return {
@@ -157,6 +157,10 @@ export class AuthService {
       return { message: AuthService.FORGOT_PASSWORD_MESSAGE };
     }
 
+    if (!user.email?.trim()) {
+      return { message: AuthService.FORGOT_PASSWORD_MESSAGE };
+    }
+
     await this.passwordResetRepo.delete({ userId: user.id });
 
     const plainToken = randomBytes(32).toString('hex');
@@ -177,7 +181,8 @@ export class AuthService {
     const resetLink = `${baseUrl}/reset-password?token=${plainToken}`;
 
     try {
-      await this.mailService.sendPasswordResetEmail(user.email, resetLink);
+      const toAddr = user.email.trim();
+      await this.mailService.sendPasswordResetEmail(toAddr, resetLink);
     } catch (e) {
       const err = e as Error;
       this.logger.error(
