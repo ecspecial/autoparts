@@ -53,6 +53,16 @@ import {
     })
     apiKey: string | null = null;
 
+    /** Логин партнёра из legacy Django API (совпадает с Users.login после миграции). */
+    @Column({
+      type: 'varchar',
+      name: 'partner_legacy_login',
+      length: 255,
+      nullable: true,
+      unique: true,
+    })
+    partnerLegacyLogin: string | null = null;
+
     /** Зафиксированное согласие на обработку ПД (регистрация или сохранение в ЛК с чекбоксом). */
     @Column({
       type: 'timestamptz',

@@ -2,17 +2,21 @@ import {
     Injectable,
     Logger,
     NotFoundException,
-    BadRequestException,
     ForbiddenException,
+    HttpException,
+    HttpStatus,
   } from '@nestjs/common';
   import { InjectRepository } from '@nestjs/typeorm';
-  import { Repository } from 'typeorm';
+  import { InjectDataSource } from '@nestjs/typeorm';
+  import { Repository, DataSource } from 'typeorm';
   import { Order } from './entities/order.entity';
   import { OrderItem } from './entities/order-item.entity';
   import { Cart } from '../cart/entities/cart.entity';
   import { CartItem } from '../cart/entities/cart-item.entity';
   import { User } from '../users/entities/user.entity';
+  import { Product } from '../products/entities/product.entity';
   import { CreateOrderDto } from './dto/create-order.dto';
+  import type { DjangoBridgeOrderLineDto } from './dto/django-integration.dto';
 import { MailService } from '../auth/mail.service';
   
   @Injectable()
@@ -30,6 +34,10 @@ import { MailService } from '../auth/mail.service';
       private cartItemsRepo: Repository<CartItem>,
       @InjectRepository(User)
       private usersRepo: Repository<User>,
+      @InjectRepository(Product)
+      private productsRepo: Repository<Product>,
+      @InjectDataSource()
+      private readonly dataSource: DataSource,
       private mailService: MailService,
     ) {}
   
@@ -262,5 +270,254 @@ import { MailService } from '../auth/mail.service';
       item.discount = discount;
       item.priceAfterDiscount = priceAfterDiscount;
       return this.orderItemsRepo.save(item);
+    }
+
+    private normalizePartnerLineQty(line: DjangoBridgeOrderLineDto): number {
+      const raw = line.quantity ?? line.qty;
+      if (raw === undefined || raw === null || raw === '') {
+        return NaN;
+      }
+      const n = typeof raw === 'string' ? parseInt(raw, 10) : Number(raw);
+      return Number.isFinite(n) ? n : NaN;
+    }
+
+    /** Пользователь партнёрского API: partner_legacy_login, email или код 1С. */
+    async findNestUserForPartnerLegacyLogin(login: string): Promise<User | null> {
+      const trimmed = String(login ?? '').trim();
+      if (!trimmed) return null;
+
+      const row = await this.usersRepo
+        .createQueryBuilder('u')
+        .where('u.partner_legacy_login = :trimmed', { trimmed })
+        .orWhere('LOWER(TRIM(u.email)) = LOWER(:trimmed)', { trimmed })
+        .orWhere(
+          '(u.client_number_1c IS NOT NULL AND TRIM(u.client_number_1c) = :trimmed)',
+          { trimmed },
+        )
+        .getOne();
+      return row ?? null;
+    }
+
+    private async findCatalogProductByArticle(rawArticle: string): Promise<Product | null> {
+      const t = String(rawArticle ?? '').trim();
+      if (!t) return null;
+
+      let p = await this.productsRepo.findOne({ where: { article: t } });
+      if (p) return p;
+
+      const noDash = t.replace(/-/g, '');
+      if (noDash && noDash !== t) {
+        p = await this.productsRepo.findOne({ where: { article: noDash } });
+        if (p) return p;
+      }
+      return null;
+    }
+
+    private legacyItemStatusLabel(status: string | null): string {
+      if (status === '1') return 'В наличии';
+      if (status === '6') return 'Нет в наличии';
+      return status ?? '';
+    }
+
+    /**
+     * Создание заказа из legacy Django (после проверки login/password в Django).
+     * order_source = API.
+     */
+    async createOrderFromDjangoBridge(
+      partnerLogin: string,
+      lines: DjangoBridgeOrderLineDto[],
+    ): Promise<number> {
+      const user = await this.findNestUserForPartnerLegacyLogin(partnerLogin);
+      if (!user) {
+        throw new HttpException(
+          { code: '1003', message: 'Указан не правильный пользователь ' },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      if (!user.isActive) {
+        throw new HttpException(
+          { code: '1003', message: 'Аккаунт не активирован' },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      const parsed: Array<{
+        product: Product;
+        quantity: number;
+        ncRef: string | null;
+        ncComent: string | null;
+      }> = [];
+
+      for (const line of lines) {
+        const quantity = this.normalizePartnerLineQty(line);
+        if (!Number.isFinite(quantity) || quantity < 1) {
+          throw new HttpException(
+            { code: '6000', message: 'Артикул не найден' },
+            HttpStatus.NOT_FOUND,
+          );
+        }
+
+        const product = await this.findCatalogProductByArticle(line.article);
+        if (!product) {
+          throw new HttpException(
+            { code: '6000', message: 'Артикул не найден' },
+            HttpStatus.NOT_FOUND,
+          );
+        }
+
+        parsed.push({
+          product,
+          quantity,
+          ncRef: line.nc_ref?.trim() ? line.nc_ref.trim() : null,
+          ncComent: line.nc_coment?.trim() ? line.nc_coment.trim() : null,
+        });
+      }
+
+      const disPct = Number(user.discount ?? 0);
+
+      const allOos =
+        parsed.length > 0 && parsed.every((x) => Number(x.product.quantity ?? 0) <= 0);
+      const orderAggregateStatus = allOos ? '6' : null;
+
+      const reference = await this.generateReference();
+
+      const orderId = await this.dataSource.transaction(async (manager) => {
+        const orderRepo = manager.getRepository(Order);
+        const orderItemRepo = manager.getRepository(OrderItem);
+
+        const order = await orderRepo.save(
+          orderRepo.create({
+            userId: user.id,
+            reference,
+            status: orderAggregateStatus,
+            orderSource: 'API',
+          }),
+        );
+
+        const orderItems = parsed.map(({ product, quantity, ncRef, ncComent }) => {
+          const base = Number(product.price);
+          const priceSnapshot =
+            Math.round(base * (100 - disPct) * 100) / 100;
+          const inStock = Number(product.quantity ?? 0) > 0;
+          const rowStatus = inStock ? '1' : '6';
+
+          return orderItemRepo.create({
+            orderId: order.id,
+            article: String(product.article).trim(),
+            name: product.name,
+            fullName: product.fullName,
+            marka: product.marka,
+            model: product.model,
+            priceSnapshot,
+            quantity,
+            discount: null,
+            priceAfterDiscount: null,
+            status: rowStatus,
+            ncRef,
+            ncComent,
+          });
+        });
+
+        await orderItemRepo.save(orderItems);
+
+        return order.id;
+      });
+
+      const result = await this.ordersRepo.findOne({
+        where: { id: orderId },
+        relations: ['items'],
+      });
+      if (!result?.items?.length) {
+        throw new NotFoundException('Ошибка при создании заказа');
+      }
+
+      void this.mailService
+        .notifyNewSiteOrder({
+          orderId: result.id,
+          reference: result.reference,
+          fullName: user.fullName,
+          email: user.email,
+          phone: user.phone,
+          clientNumber1c: user.clientNumber1c,
+          orderSource: 'API',
+          items: result.items.map((i) => ({
+            article: i.article,
+            name: i.name,
+            quantity: i.quantity,
+            price: Number(i.priceSnapshot),
+          })),
+        })
+        .catch((err) =>
+          this.logger.warn(
+            `Уведомление о заказе не отправлено: ${(err as Error).message}`,
+          ),
+        );
+
+      return orderId;
+    }
+
+    /**
+     * Детали заказа для legacy order-details / get_order_details_m.
+     */
+    async getPartnerOrderDetailsForLegacy(
+      partnerLogin: string,
+      orderId: number,
+      variant: 'classic' | 'market',
+    ): Promise<Record<string, unknown>> {
+      const user = await this.findNestUserForPartnerLegacyLogin(partnerLogin);
+      if (!user) {
+        throw new HttpException(
+          { code: '1003', message: 'Указан не правильный пользователь ' },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      const order = await this.ordersRepo.findOne({
+        where: { id: orderId, userId: user.id },
+        relations: ['items'],
+      });
+
+      if (!order || !order.items?.length) {
+        throw new HttpException(
+          { code: '5021', message: 'Заказ не найден.' },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      const itemsOut: Record<string, unknown>[] = [];
+
+      for (const item of order.items) {
+        const product = await this.findCatalogProductByArticle(item.article);
+        const brand = product?.brand ?? item.marka ?? '';
+
+        const statusNum = Number.parseInt(String(item.status ?? '0'), 10);
+
+        if (variant === 'market') {
+          itemsOut.push({
+            count_need: item.quantity,
+            status: statusNum,
+            t2_manufacturer: brand,
+            t2_article_show: item.article,
+            t2_name: item.name,
+            nc_ref: item.ncRef ?? '',
+            nc_coment: item.ncComent ?? '',
+          });
+        } else {
+          itemsOut.push({
+            count_need: item.quantity,
+            status: statusNum,
+            name_status: this.legacyItemStatusLabel(item.status),
+            t2_manufacturer: brand,
+            t2_article_show: item.article,
+            t2_name: item.name,
+          });
+        }
+      }
+
+      return {
+        message: 'Данные заказа',
+        order_id: orderId,
+        order_items: itemsOut,
+      };
     }
   }

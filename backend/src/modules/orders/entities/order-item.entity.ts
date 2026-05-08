@@ -55,6 +55,13 @@ import {
   
     @Column({ type: 'varchar', length: 100, nullable: true, default: null })
     status: string | null;
+
+    /** Поля маркет-интеграции (legacy create-order-market). */
+    @Column({ type: 'varchar', length: 255, nullable: true, default: null, name: 'nc_ref' })
+    ncRef: string | null;
+
+    @Column({ type: 'text', nullable: true, default: null, name: 'nc_coment' })
+    ncComent: string | null;
   
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

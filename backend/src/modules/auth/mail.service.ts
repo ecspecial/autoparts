@@ -137,6 +137,8 @@ export class MailService {
     email: string;
     phone: string;
     clientNumber1c: string | null;
+    /** 'site' по умолчанию; 'API' для партнёрских заказов через Django bridge. */
+    orderSource?: string | null;
     items: { article: string; name: string; quantity: number; price: number }[];
   }): Promise<void> {
     const lines = data.items
@@ -145,9 +147,10 @@ export class MailService {
           `<tr><td>${escapeHtml(i.article)}</td><td>${escapeHtml(i.name)}</td><td>${i.quantity}</td><td>${i.price}</td></tr>`,
       )
       .join('');
-    const subject = `Заказ с сайта ${data.reference} — ${data.fullName || data.email}`;
+    const source = data.orderSource === 'API' ? ' (API)' : ' с сайта';
+    const subject = `Заказ${source} ${data.reference} — ${data.fullName || data.email}`;
     const html = `
-      <p><strong>${escapeHtml(data.fullName)}</strong> оформил заказ на сайте.</p>
+      <p><strong>${escapeHtml(data.fullName)}</strong> оформил заказ${data.orderSource === 'API' ? ' через партнёрское API' : ' на сайте'}.</p>
       <p>Номер: <strong>${escapeHtml(data.reference)}</strong> (id ${data.orderId})</p>
       <p>Email: ${escapeHtml(data.email)} · Телефон: ${escapeHtml(data.phone)}${
         data.clientNumber1c
