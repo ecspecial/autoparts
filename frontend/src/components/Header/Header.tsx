@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './Header.css';
 import { useCart } from '../../context/CartContext';
+import logoImageUrl from '../../assets/logo-image.png';
 
 
 const Header = () => {
@@ -29,7 +30,7 @@ const Header = () => {
     <header className="header">
       <div className="header-container">
       <Link to="/" className="header-logo" onClick={closeMobileMenu}>
-        <img src="/logo-image.png" alt="Forward Autoparts" className="header-logo-img" />
+        <img src={logoImageUrl} alt="Forward Autoparts" className="header-logo-img" />
       </Link>
         
         {/* Desktop Navigation */}

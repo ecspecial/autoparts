@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import './Footer.css';
+import logoImageUrl from '../../assets/logo-image.png';
 
 /** Ссылка-приглашение в MAX; задайте VITE_MAX_CONTACT_URL в .env (например https://max.ru/join/...) */
-const MAX_CONTACT_HREF = "https://max.ru/u/f9LHodD0cOIaEIgwT_5GFd6lQnBd-X01QzawHH2ZqSv4X0s34SyxbBoEJj0";
-  (import.meta.env.VITE_MAX_CONTACT_URL as string | undefined)?.trim() || 'https://max.ru/';
+const MAX_CONTACT_HREF =
+  (import.meta.env.VITE_MAX_CONTACT_URL as string | undefined)?.trim() ||
+  'https://max.ru/u/f9LHodD0cOIaEIgwT_5GFd6lQnBd-X01QzawHH2ZqSv4X0s34SyxbBoEJj0';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -14,7 +16,7 @@ const Footer = () => {
         <div className="footer-top">
           <div className="footer-column">
             <Link to="/" className="footer-logo">
-              <img src="/logo-image.png" alt="Forward Autoparts" className="footer-logo-img" />
+              <img src={logoImageUrl} alt="Forward Autoparts" className="footer-logo-img" />
             </Link>
             <p className="footer-description">
               Кузовные запчасти для всех марок автомобилей. Качество и надёжность.
