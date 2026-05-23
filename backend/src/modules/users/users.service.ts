@@ -54,6 +54,19 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { id } });
   }
 
+  /** Админка: поиск активной записи по номеру 1С (сравнение по TRIM). */
+  async findOneByClientNumber1c(clientNumberRaw: string): Promise<User | null> {
+    const key = String(clientNumberRaw ?? '').trim();
+    if (!key) {
+      return null;
+    }
+    return this.usersRepository
+      .createQueryBuilder('u')
+      .where('u.client_number_1c IS NOT NULL')
+      .andWhere('TRIM(u.client_number_1c) = :key', { key })
+      .getOne();
+  }
+
   async updatePasswordHash(userId: number, passwordHash: string): Promise<void> {
     await this.usersRepository.update({ id: userId }, { passwordHash });
   }
@@ -192,6 +205,25 @@ export class UsersService {
     if (!user) throw new NotFoundException('Пользователь не найден');
     user.apiKey = key;
     return this.usersRepository.save(user);
+  }
+
+  /** Справочная скидка ЛК по номеру 1С. */
+  async updateClientDiscountBy1c(clientNumber1cRaw: string, discount: number): Promise<User> {
+    const user = await this.findOneByClientNumber1c(clientNumber1cRaw);
+    if (!user) {
+      throw new NotFoundException('Клиент с таким номером 1С не найден');
+    }
+    user.discount = discount;
+    return this.usersRepository.save(user);
+  }
+
+  /** API-ключ по номеру 1С. */
+  async updateUserApiKeyBy1c(clientNumber1cRaw: string, apiKey: string): Promise<User> {
+    const user = await this.findOneByClientNumber1c(clientNumber1cRaw);
+    if (!user) {
+      throw new NotFoundException('Клиент с таким номером 1С не найден');
+    }
+    return this.updateUserApiKey(user.id, apiKey);
   }
 
   /** Поиск клиента для Django-моста (логин из API, email/1С или стабильный Django id). */
