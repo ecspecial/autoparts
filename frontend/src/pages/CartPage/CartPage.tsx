@@ -108,7 +108,7 @@ const CartPage = () => {
     try {
       await ordersApi.createOrder(Array.from(selectedIds), true);
       await refreshCart();
-      navigate('/profile', { state: { tab: 'orders', orderJustPlaced: true } });
+      navigate('/profile?tab=orders', { state: { orderJustPlaced: true } });
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ||

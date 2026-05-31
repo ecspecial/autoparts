@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../api/auth';
 import { deliveryApi } from '../../api/delivery';
@@ -34,10 +34,19 @@ function orderCountsForNavBadge(status: string | null | undefined): boolean {
 const ProfilePage = () => {
   const { user, isAuthenticated, refreshProfile } = useAuth();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>(
-    (location.state as any)?.tab === 'orders' ? 'orders' : 'profile',
-  );
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    if (tabFromUrl === 'orders') return 'orders';
+    if ((location.state as { tab?: string } | null)?.tab === 'orders') return 'orders';
+    return 'profile';
+  });
+
+  useEffect(() => {
+    if (tabFromUrl === 'orders') setActiveTab('orders');
+    else if (tabFromUrl === 'profile' || tabFromUrl === null) setActiveTab('profile');
+  }, [tabFromUrl]);
 
   // Profile tab state
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -192,7 +201,10 @@ const ProfilePage = () => {
             <nav className="profile-nav">
               <button
                 className={`profile-nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-                onClick={() => setActiveTab('profile')}
+                onClick={() => {
+                  setActiveTab('profile');
+                  setSearchParams({});
+                }}
               >
                 Профиль
               </button>
@@ -200,6 +212,7 @@ const ProfilePage = () => {
                 className={`profile-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
                 onClick={() => {
                   setActiveTab('orders');
+                  setSearchParams({ tab: 'orders' });
                   loadOrders();
                 }}
               >

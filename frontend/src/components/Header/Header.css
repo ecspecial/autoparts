@@ -328,10 +328,43 @@ a.city-switcher-item:hover {
   cursor: default;
 }
 
+.city-switcher-label--short {
+  display: none;
+}
+
 .city-switcher-mobile {
-  margin: 0 1.5rem 1rem;
+  display: flex;
+  margin: 0 1rem 1rem;
   align-self: stretch;
-  width: calc(100% - 3rem);
+  width: calc(100% - 2rem);
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.city-switcher-mobile .city-switcher-item {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.5rem 0.4rem;
+  font-size: 0.8125rem;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 1024px) {
+  .city-switcher-label--full {
+    display: none;
+  }
+
+  .city-switcher-label--short {
+    display: inline;
+  }
+
+  .header-nav .city-switcher {
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {

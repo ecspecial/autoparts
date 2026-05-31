@@ -6,9 +6,18 @@ import { useCart } from '../../context/CartContext';
 import { detectSiteCity, getSiteLogoUrl } from '../../utils/siteLogo';
 
 const CITIES = [
-  { key: 'ekb', label: 'Екатеринбург', host: 'ekb.autobody.ru' },
-  { key: 'spb', label: 'Санкт-Петербург', host: 'spb.autobody.ru' },
+  { key: 'ekb', label: 'Екатеринбург', shortLabel: 'Екб', host: 'ekb.autobody.ru' },
+  { key: 'spb', label: 'Санкт-Петербург', shortLabel: 'СПб', host: 'spb.autobody.ru' },
 ] as const;
+
+function CityLabel({ full, short }: { full: string; short: string }) {
+  return (
+    <>
+      <span className="city-switcher-label city-switcher-label--full">{full}</span>
+      <span className="city-switcher-label city-switcher-label--short">{short}</span>
+    </>
+  );
+}
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -17,6 +26,9 @@ const Header = () => {
   const { itemCount } = useCart();
   const currentCity = detectSiteCity();
   const logoUrl = getSiteLogoUrl();
+  const ordersTabActive =
+    location.pathname === '/profile' &&
+    new URLSearchParams(location.search).get('tab') === 'orders';
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -45,10 +57,12 @@ const Header = () => {
           <div className="city-switcher">
             {CITIES.map(c => (
               currentCity === c.key ? (
-                <span key={c.key} className="city-switcher-item city-switcher-active">{c.label}</span>
+                <span key={c.key} className="city-switcher-item city-switcher-active">
+                  <CityLabel full={c.label} short={c.shortLabel} />
+                </span>
               ) : (
-                <a key={c.key} href={`https://${c.host}${location.pathname}`} className="city-switcher-item">
-                  {c.label}
+                <a key={c.key} href={`https://${c.host}${location.pathname}${location.search}`} className="city-switcher-item">
+                  <CityLabel full={c.label} short={c.shortLabel} />
                 </a>
               )
             ))}
@@ -70,7 +84,18 @@ const Header = () => {
           {/* Auth-based navigation */}
           {isAuthenticated ? (
             <>
-              <Link to="/profile" className={`header-nav-link ${location.pathname === '/profile' ? 'active' : ''}`} onClick={closeMobileMenu}>
+              <Link
+                to="/profile?tab=orders"
+                className={`header-nav-link ${ordersTabActive ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Мои заказы
+              </Link>
+              <Link
+                to="/profile"
+                className={`header-nav-link ${location.pathname === '/profile' && !ordersTabActive ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
                 Профиль
               </Link>
               <Link to="/cart" className="header-cart">
@@ -116,10 +141,17 @@ const Header = () => {
         <div className="city-switcher city-switcher-mobile">
           {CITIES.map(c => (
             currentCity === c.key ? (
-              <span key={c.key} className="city-switcher-item city-switcher-active">{c.label}</span>
+              <span key={c.key} className="city-switcher-item city-switcher-active">
+                <CityLabel full={c.label} short={c.shortLabel} />
+              </span>
             ) : (
-              <a key={c.key} href={`https://${c.host}${location.pathname}`} className="city-switcher-item" onClick={closeMobileMenu}>
-                {c.label}
+              <a
+                key={c.key}
+                href={`https://${c.host}${location.pathname}${location.search}`}
+                className="city-switcher-item"
+                onClick={closeMobileMenu}
+              >
+                <CityLabel full={c.label} short={c.shortLabel} />
               </a>
             )
           ))}
@@ -141,7 +173,18 @@ const Header = () => {
         {/* Auth-based mobile navigation */}
         {isAuthenticated ? (
           <>
-            <Link to="/profile" className={`mobile-menu-link ${location.pathname === '/profile' ? 'active' : ''}`} onClick={closeMobileMenu}>
+            <Link
+              to="/profile?tab=orders"
+              className={`mobile-menu-link ${ordersTabActive ? 'active' : ''}`}
+              onClick={closeMobileMenu}
+            >
+              Мои заказы
+            </Link>
+            <Link
+              to="/profile"
+              className={`mobile-menu-link ${location.pathname === '/profile' && !ordersTabActive ? 'active' : ''}`}
+              onClick={closeMobileMenu}
+            >
               Профиль
             </Link>
             <Link to="/cart" className={`mobile-menu-link ${location.pathname === '/cart' ? 'active' : ''}`} onClick={closeMobileMenu}>
