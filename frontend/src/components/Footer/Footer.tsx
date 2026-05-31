@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import './Footer.css';
-import logoImageUrl from '../../assets/logo-image.png';
+import { getSiteLogoUrl } from '../../utils/siteLogo';
 
 /** Ссылка-приглашение в MAX; задайте VITE_MAX_CONTACT_URL в .env (например https://max.ru/join/...) */
 const MAX_CONTACT_HREF =
@@ -9,6 +9,7 @@ const MAX_CONTACT_HREF =
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const logoUrl = getSiteLogoUrl();
 
   return (
     <footer className="footer">
@@ -16,7 +17,7 @@ const Footer = () => {
         <div className="footer-top">
           <div className="footer-column">
             <Link to="/" className="footer-logo">
-              <img src={logoImageUrl} alt="Forward Autoparts" className="footer-logo-img" />
+              <img src={logoUrl} alt="Forward Autoparts" className="footer-logo-img" />
             </Link>
             <p className="footer-description">
               Кузовные запчасти для всех марок автомобилей. Качество и надёжность.

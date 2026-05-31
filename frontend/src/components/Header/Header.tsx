@@ -3,25 +3,20 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './Header.css';
 import { useCart } from '../../context/CartContext';
-import logoImageUrl from '../../assets/logo-image.png';
-
+import { detectSiteCity, getSiteLogoUrl } from '../../utils/siteLogo';
 
 const CITIES = [
   { key: 'ekb', label: 'Екатеринбург', host: 'ekb.autobody.ru' },
   { key: 'spb', label: 'Санкт-Петербург', host: 'spb.autobody.ru' },
 ] as const;
 
-function detectCity(): 'ekb' | 'spb' {
-  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-  return hostname.startsWith('spb.') ? 'spb' : 'ekb';
-}
-
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
   const { itemCount } = useCart();
-  const currentCity = detectCity();
+  const currentCity = detectSiteCity();
+  const logoUrl = getSiteLogoUrl();
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -41,7 +36,7 @@ const Header = () => {
     <header className="header">
       <div className="header-container">
       <Link to="/" className="header-logo" onClick={closeMobileMenu}>
-        <img src={logoImageUrl} alt="Forward Autoparts" className="header-logo-img" />
+        <img src={logoUrl} alt="Forward Autoparts" className="header-logo-img" />
       </Link>
         
         {/* Desktop Navigation */}
