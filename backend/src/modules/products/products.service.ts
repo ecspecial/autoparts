@@ -3,11 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Brackets } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CrossCsvImportService } from '../cross-reference/services/cross-csv-import.service';
-
-/** Returns city tag from SITE_CITY env var, defaults to 'ekb'. */
-function siteCity(): string {
-  return (process.env.SITE_CITY ?? 'ekb').toLowerCase().trim();
-}
+import { CityContextService } from '../../common/city-context.service';
 
 @Injectable()
 export class ProductsService {
@@ -15,11 +11,12 @@ export class ProductsService {
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
     private crossCsvImportService: CrossCsvImportService,
+    private cityContext: CityContextService,
   ) {}
 
   async findById(id: number): Promise<Product> {
     const product = await this.productRepository.findOne({
-      where: { id, city: siteCity() },
+      where: { id, city: this.cityContext.getCity() },
     });
 
     if (!product) {
@@ -41,7 +38,7 @@ export class ProductsService {
     }
 
     const [products, total] = await this.productRepository.findAndCount({
-      where: { article: In(articles), city: siteCity() },
+      where: { article: In(articles), city: this.cityContext.getCity() },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -68,7 +65,7 @@ export class ProductsService {
     limit: number;
   }) {
     const query = this.productRepository.createQueryBuilder('product');
-    query.where('product.city = :city', { city: siteCity() });
+    query.where('product.city = :city', { city: this.cityContext.getCity() });
 
     if (filters.marka) {
       query.andWhere('product.marka = :marka', { marka: filters.marka });
@@ -126,7 +123,7 @@ export class ProductsService {
     const query = this.productRepository
       .createQueryBuilder('product')
       .select('DISTINCT product.type', 'type')
-      .where('product.city = :city', { city: siteCity() })
+      .where('product.city = :city', { city: this.cityContext.getCity() })
       .andWhere('product.type IS NOT NULL')
       .andWhere("product.type != ''");
 
@@ -154,7 +151,7 @@ export class ProductsService {
    */
   async getNewArrivals(limit = 15): Promise<Product[]> {
     const take = Math.min(Math.max(limit, 1), 30);
-    const city = siteCity();
+    const city = this.cityContext.getCity();
 
     const flagged = await this.productRepository
       .createQueryBuilder('p')
@@ -196,7 +193,7 @@ export class ProductsService {
     limit: number = 20,
   ): Promise<{ products: Product[]; total: number; articlesFound: string[] }> {
     const normalizedQuery = this.normalizeForSearch(query);
-    const city = siteCity();
+    const city = this.cityContext.getCity();
 
     const oemArticles = await this.crossCsvImportService.findArticlesByOem(query);
 

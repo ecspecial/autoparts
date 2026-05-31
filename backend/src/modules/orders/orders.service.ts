@@ -19,6 +19,7 @@ import {
   import type { DjangoBridgeOrderLineDto } from './dto/django-integration.dto';
 import { MailService } from '../auth/mail.service';
 import { UsersService } from '../users/users.service';
+import { CityContextService } from '../../common/city-context.service';
   
   @Injectable()
   export class OrdersService {
@@ -41,6 +42,7 @@ import { UsersService } from '../users/users.service';
       private readonly dataSource: DataSource,
       private mailService: MailService,
       private usersService: UsersService,
+      private cityContext: CityContextService,
     ) {}
   
     private async generateReference(): Promise<string> {
@@ -75,9 +77,8 @@ import { UsersService } from '../users/users.service';
   
       const reference = await this.generateReference();
   
-      const siteCity = (process.env.SITE_CITY ?? 'ekb').toLowerCase().trim();
       const savedOrder = await this.ordersRepo.save(
-        this.ordersRepo.create({ userId, reference, status: null, orderSource: 'site', city: siteCity }),
+        this.ordersRepo.create({ userId, reference, status: null, orderSource: 'site', city: this.cityContext.getCity() }),
       );
   
       const orderItems = items.map((ci) =>

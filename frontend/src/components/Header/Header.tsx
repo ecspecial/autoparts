@@ -6,11 +6,22 @@ import { useCart } from '../../context/CartContext';
 import logoImageUrl from '../../assets/logo-image.png';
 
 
+const CITIES = [
+  { key: 'ekb', label: 'Екатеринбург', host: 'ekb.autobody.ru' },
+  { key: 'spb', label: 'Санкт-Петербург', host: 'spb.autobody.ru' },
+] as const;
+
+function detectCity(): 'ekb' | 'spb' {
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  return hostname.startsWith('spb.') ? 'spb' : 'ekb';
+}
+
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
   const { itemCount } = useCart();
+  const currentCity = detectCity();
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -35,6 +46,19 @@ const Header = () => {
         
         {/* Desktop Navigation */}
         <nav className="header-nav">
+          {/* City switcher */}
+          <div className="city-switcher">
+            {CITIES.map(c => (
+              currentCity === c.key ? (
+                <span key={c.key} className="city-switcher-item city-switcher-active">{c.label}</span>
+              ) : (
+                <a key={c.key} href={`https://${c.host}${location.pathname}`} className="city-switcher-item">
+                  {c.label}
+                </a>
+              )
+            ))}
+          </div>
+
           <Link to="/catalog" className={`header-nav-link ${location.pathname.startsWith('/catalog') || location.pathname.startsWith('/product') ? 'active' : ''}`}>
             Каталог
           </Link>
@@ -93,6 +117,19 @@ const Header = () => {
 
       {/* Mobile Menu Drawer */}
       <nav className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
+        {/* City switcher mobile */}
+        <div className="city-switcher city-switcher-mobile">
+          {CITIES.map(c => (
+            currentCity === c.key ? (
+              <span key={c.key} className="city-switcher-item city-switcher-active">{c.label}</span>
+            ) : (
+              <a key={c.key} href={`https://${c.host}${location.pathname}`} className="city-switcher-item" onClick={closeMobileMenu}>
+                {c.label}
+              </a>
+            )
+          ))}
+        </div>
+
         <Link to="/catalog" className={`mobile-menu-link ${location.pathname.startsWith('/catalog') || location.pathname.startsWith('/product') ? 'active' : ''}`} onClick={closeMobileMenu}>
           Каталог
         </Link>

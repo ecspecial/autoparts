@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from '../entities/product.entity';
+import { CityContextService } from '../../../common/city-context.service';
 
 export interface CategoriesCache {
   brands: string[];
@@ -13,25 +14,33 @@ export interface CategoriesCache {
 @Injectable()
 export class CategoriesCacheService {
   private readonly logger = new Logger(CategoriesCacheService.name);
-  private cache: CategoriesCache | null = null;
+  /** Per-city cache so both ekb and spb are served from one process. */
+  private cacheByCity = new Map<string, CategoriesCache>();
 
   constructor(
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
+    private cityContext: CityContextService,
   ) {}
 
   async getCategories(): Promise<CategoriesCache> {
-    if (!this.cache) {
-      await this.rebuildCache();
+    const city = this.cityContext.getCity();
+    if (!this.cacheByCity.has(city)) {
+      await this.rebuildCacheForCity(city);
     }
-    return this.cache!;
+    return this.cacheByCity.get(city)!;
   }
 
+  /** Called from ProductsSyncService after CSV import — rebuilds caches for all known cities. */
   async rebuildCache(): Promise<void> {
-    this.logger.log('Rebuilding categories cache...');
-    const city = (process.env.SITE_CITY ?? 'ekb').toLowerCase().trim();
+    for (const city of ['ekb', 'spb']) {
+      await this.rebuildCacheForCity(city);
+    }
+  }
 
-    // Get all unique brands
+  async rebuildCacheForCity(city: string): Promise<void> {
+    this.logger.log(`Rebuilding categories cache for city="${city}"...`);
+
     const brandsResult = await this.productRepository
       .createQueryBuilder('product')
       .select('DISTINCT product.marka', 'marka')
@@ -59,12 +68,8 @@ export class CategoriesCacheService {
 
     const modelsByBrand: Record<string, string[]> = {};
     modelsResult.forEach(r => {
-      if (!modelsByBrand[r.marka]) {
-        modelsByBrand[r.marka] = [];
-      }
-      if (!modelsByBrand[r.marka].includes(r.model)) {
-        modelsByBrand[r.marka].push(r.model);
-      }
+      if (!modelsByBrand[r.marka]) modelsByBrand[r.marka] = [];
+      if (!modelsByBrand[r.marka].includes(r.model)) modelsByBrand[r.marka].push(r.model);
     });
 
     const generationsResult = await this.productRepository
@@ -88,12 +93,8 @@ export class CategoriesCacheService {
     const generationsByModel: Record<string, string[]> = {};
     generationsResult.forEach(r => {
       const key = `${r.marka}-${r.model}`;
-      if (!generationsByModel[key]) {
-        generationsByModel[key] = [];
-      }
-      if (!generationsByModel[key].includes(r.generation)) {
-        generationsByModel[key].push(r.generation);
-      }
+      if (!generationsByModel[key]) generationsByModel[key] = [];
+      if (!generationsByModel[key].includes(r.generation)) generationsByModel[key].push(r.generation);
     });
 
     const partTypesResult = await this.productRepository
@@ -107,17 +108,13 @@ export class CategoriesCacheService {
 
     const partTypes = partTypesResult.map(r => r.type);
 
-    this.cache = {
-      brands,
-      modelsByBrand,
-      generationsByModel,
-      partTypes,
-    };
-
-    this.logger.log(`Cache rebuilt (city=${city}): ${brands.length} brands, ${Object.keys(modelsByBrand).length} brand-model pairs, ${Object.keys(generationsByModel).length} model-generation pairs`);
+    this.cacheByCity.set(city, { brands, modelsByBrand, generationsByModel, partTypes });
+    this.logger.log(
+      `Cache rebuilt (city=${city}): ${brands.length} brands, ${Object.keys(modelsByBrand).length} brand-model pairs`,
+    );
   }
 
   clearCache(): void {
-    this.cache = null;
+    this.cacheByCity.clear();
   }
 }

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -11,11 +11,14 @@ import { CartModule } from './modules/cart/cart.module';
 import { CrossReferenceModule } from './modules/cross-reference/cross-reference.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
 import { NewsModule } from './modules/news/news.module';
-import { OrdersModule } from './modules/orders/orders.module'; // ← ADD
+import { OrdersModule } from './modules/orders/orders.module';
 import { ConsentsModule } from './modules/consents/consents.module';
+import { CityContextModule } from './common/city-context.module';
+import { CityMiddleware } from './common/city.middleware';
 
 @Module({
   imports: [
+    CityContextModule,
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
@@ -46,4 +49,8 @@ import { ConsentsModule } from './modules/consents/consents.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(CityMiddleware).forRoutes('*');
+  }
+}

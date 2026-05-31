@@ -284,7 +284,47 @@
     }
   }
   
-  @media (max-width: 480px) {
+/* City switcher */
+.city-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--background-alt, #f5f5f5);
+  border-radius: 20px;
+  padding: 2px;
+  margin-right: 0.5rem;
+}
+
+.city-switcher-item {
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.3rem 0.75rem;
+  border-radius: 18px;
+  text-decoration: none;
+  color: var(--text-secondary, #666);
+  transition: background 0.18s, color 0.18s;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.city-switcher-item:hover {
+  color: var(--text-primary, #111);
+}
+
+.city-switcher-active {
+  background: var(--white, #fff);
+  color: var(--primary-color, #e63946);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  cursor: default;
+}
+
+.city-switcher-mobile {
+  margin: 0.75rem 1.5rem 0.5rem;
+  align-self: flex-start;
+}
+
+@media (max-width: 480px) {
     .header-container {
       padding: 0 1rem;
     }
