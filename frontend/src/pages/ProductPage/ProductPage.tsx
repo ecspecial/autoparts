@@ -8,6 +8,7 @@ import { productsApi } from '../../api/products';
 import type { Product } from '../../api/products';
 import './ProductPage.css';
 import Modal from '../../components/Modal/Modal';
+import ProductImageGallery from '../../components/ProductImageGallery/ProductImageGallery';
 
 
 export default function ProductPage() {
@@ -27,28 +28,11 @@ export default function ProductPage() {
   const [modalMessage, setModalMessage] = useState('');
   const [modalType, setModalType] = useState<'error' | 'success' | 'info'>('info');
   
-  const [imageSrc, setImageSrc] = useState('/product-placeholder.png');
-  const [imageError, setImageError] = useState(false);
-
   useEffect(() => {
     if (id) {
       loadProduct(parseInt(id, 10));
     }
   }, [id]);
-
-  useEffect(() => {
-    if (product) {
-      setImageSrc(`/images/products/${product.article}.jpg`);
-      setImageError(false);
-    }
-  }, [product]);
-
-  const handleImageError = () => {
-    if (!imageError) {
-      setImageError(true);
-      setImageSrc('/product-placeholder.png');
-    }
-  };
 
   const loadProduct = async (productId: number) => {
     setLoading(true);
@@ -171,13 +155,10 @@ export default function ProductPage() {
         <div className="product-content">
           {/* Product Image */}
           <div className="product-image-section">
-            <div className="product-main-image">
-              <img 
-                src={imageSrc} 
-                alt={product.fullName}
-                onError={handleImageError}
-              />
-            </div>
+            <ProductImageGallery
+              article={product.article}
+              alt={product.fullName}
+            />
           </div>
 
           {/* Product Info */}

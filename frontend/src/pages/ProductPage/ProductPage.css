@@ -59,22 +59,7 @@
   gap: 1rem;
 }
 
-.product-main-image {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  background-color: var(--bg-gray);
-  border-radius: 12px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.product-main-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+/* Галерея: ProductImageGallery.css */
 
 /* Product Info Section */
 .product-info-section {
