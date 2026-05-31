@@ -29,7 +29,11 @@ import {
     status: string | null;
 
     @Column({ type: 'varchar', name: 'order_source', length: 50, nullable: true, default: null })
-    orderSource: string | null; // "site" — с сайта, пусто/другое — через API
+    orderSource: string | null; // "site" — с сайта, "API" — через Django bridge
+
+    /** Город склада/сайта откуда поступил заказ: 'ekb' | 'spb' */
+    @Column({ type: 'varchar', length: 20, nullable: true, default: null })
+    city: string | null;
   
     @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
     items: OrderItem[];

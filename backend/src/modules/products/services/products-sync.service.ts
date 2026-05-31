@@ -34,14 +34,20 @@ export class ProductsSyncService implements OnModuleInit {
   async syncAll() {
     this.logger.log('Starting scheduled sync...');
 
-    // 1. Products
-    try {
-      const count = await this.csvImportService.importFromCsv();
-      await this.categoriesCache.rebuildCache();
-      this.logger.log(`✅ Products sync: ${count} products imported`);
-    } catch (error) {
-      this.logger.error('❌ Failed to sync products', error);
+    // 1. Products — import per city (ekb + spb)
+    const CITIES = ['ekb', 'spb'];
+    let totalProducts = 0;
+    for (const city of CITIES) {
+      try {
+        const count = await this.csvImportService.importFromCsvForCity(city);
+        totalProducts += count;
+        this.logger.log(`✅ Products sync (${city}): ${count} products imported`);
+      } catch (error) {
+        this.logger.error(`❌ Failed to sync products for city="${city}"`, error);
+      }
     }
+    await this.categoriesCache.rebuildCache();
+    this.logger.log(`✅ Products sync total: ${totalProducts} products`);
 
     // 2. Cross-reference
     try {

@@ -29,25 +29,27 @@ export class CategoriesCacheService {
 
   async rebuildCache(): Promise<void> {
     this.logger.log('Rebuilding categories cache...');
+    const city = (process.env.SITE_CITY ?? 'ekb').toLowerCase().trim();
 
     // Get all unique brands
     const brandsResult = await this.productRepository
       .createQueryBuilder('product')
       .select('DISTINCT product.marka', 'marka')
-      .where('product.marka IS NOT NULL')
+      .where('product.city = :city', { city })
+      .andWhere('product.marka IS NOT NULL')
       .andWhere("product.marka != ''")
       .orderBy('product.marka', 'ASC')
       .getRawMany();
 
     const brands = brandsResult.map(r => r.marka);
 
-    // Get models grouped by brand - FIX: Use distinct() method
     const modelsResult = await this.productRepository
       .createQueryBuilder('product')
       .select('product.marka', 'marka')
-      .addSelect('product.model', 'model')  // ← Remove DISTINCT from here
-      .distinct(true)  // ← Add .distinct() method instead
-      .where('product.marka IS NOT NULL')
+      .addSelect('product.model', 'model')
+      .distinct(true)
+      .where('product.city = :city', { city })
+      .andWhere('product.marka IS NOT NULL')
       .andWhere('product.model IS NOT NULL')
       .andWhere("product.marka != ''")
       .andWhere("product.model != ''")
@@ -65,14 +67,14 @@ export class CategoriesCacheService {
       }
     });
 
-    // Get generations grouped by brand-model - FIX: Use distinct() method
     const generationsResult = await this.productRepository
       .createQueryBuilder('product')
       .select('product.marka', 'marka')
       .addSelect('product.model', 'model')
-      .addSelect('product.generation', 'generation')  // ← Remove DISTINCT from here
-      .distinct(true)  // ← Add .distinct() method instead
-      .where('product.marka IS NOT NULL')
+      .addSelect('product.generation', 'generation')
+      .distinct(true)
+      .where('product.city = :city', { city })
+      .andWhere('product.marka IS NOT NULL')
       .andWhere('product.model IS NOT NULL')
       .andWhere('product.generation IS NOT NULL')
       .andWhere("product.marka != ''")
@@ -97,7 +99,8 @@ export class CategoriesCacheService {
     const partTypesResult = await this.productRepository
       .createQueryBuilder('product')
       .select('DISTINCT product.type', 'type')
-      .where('product.type IS NOT NULL')
+      .where('product.city = :city', { city })
+      .andWhere('product.type IS NOT NULL')
       .andWhere("product.type != ''")
       .orderBy('product.type', 'ASC')
       .getRawMany();
@@ -111,7 +114,7 @@ export class CategoriesCacheService {
       partTypes,
     };
 
-    this.logger.log(`Cache rebuilt: ${brands.length} brands, ${Object.keys(modelsByBrand).length} brand-model pairs, ${Object.keys(generationsByModel).length} model-generation pairs`);
+    this.logger.log(`Cache rebuilt (city=${city}): ${brands.length} brands, ${Object.keys(modelsByBrand).length} brand-model pairs, ${Object.keys(generationsByModel).length} model-generation pairs`);
   }
 
   clearCache(): void {

@@ -75,8 +75,9 @@ import { UsersService } from '../users/users.service';
   
       const reference = await this.generateReference();
   
+      const siteCity = (process.env.SITE_CITY ?? 'ekb').toLowerCase().trim();
       const savedOrder = await this.ordersRepo.save(
-        this.ordersRepo.create({ userId, reference, status: null, orderSource: 'site' }),
+        this.ordersRepo.create({ userId, reference, status: null, orderSource: 'site', city: siteCity }),
       );
   
       const orderItems = items.map((ci) =>
@@ -152,6 +153,7 @@ import { UsersService } from '../users/users.service';
         full_name: order.user.fullName || null,
         phone: order.user.phone || null,
         order_source: order.orderSource || null,
+        city: order.city || null,
         delivery_method: order.user.preferredDelivery,
         delivery_address: order.user.deliveryAddress || null,
         order_reference: order.reference,
@@ -180,6 +182,7 @@ import { UsersService } from '../users/users.service';
         site_client_id: order.user.id,
         client_number_1c: order.user.clientNumber1c,
         order_source: order.orderSource || null,
+        city: order.city || null,
         delivery_method: order.user.preferredDelivery,
         delivery_address: order.user.deliveryAddress || null,
         order_reference: order.reference,
@@ -289,16 +292,25 @@ import { UsersService } from '../users/users.service';
       return Number.isFinite(n) ? n : NaN;
     }
 
-    private async findCatalogProductByArticle(rawArticle: string): Promise<Product | null> {
+    private async findCatalogProductByArticle(
+      rawArticle: string,
+      city?: string | null,
+    ): Promise<Product | null> {
       const t = String(rawArticle ?? '').trim();
       if (!t) return null;
 
-      let p = await this.productsRepo.findOne({ where: { article: t } });
+      const cityFilter = city?.trim().toLowerCase() || undefined;
+
+      let p = await this.productsRepo.findOne({
+        where: { article: t, ...(cityFilter ? { city: cityFilter } : {}) },
+      });
       if (p) return p;
 
       const noDash = t.replace(/-/g, '');
       if (noDash && noDash !== t) {
-        p = await this.productsRepo.findOne({ where: { article: noDash } });
+        p = await this.productsRepo.findOne({
+          where: { article: noDash, ...(cityFilter ? { city: cityFilter } : {}) },
+        });
         if (p) return p;
       }
       return null;
@@ -319,8 +331,9 @@ import { UsersService } from '../users/users.service';
       lines: DjangoBridgeOrderLineDto[];
       legacyUserId?: number;
       legacyDiscount?: number;
+      legacyCity?: string;
     }): Promise<number> {
-      const { partnerLogin, lines, legacyUserId, legacyDiscount } = params;
+      const { partnerLogin, lines, legacyUserId, legacyDiscount, legacyCity } = params;
 
       let user = await this.usersService.findForDjangoBridgePartner(
         partnerLogin,
@@ -364,7 +377,7 @@ import { UsersService } from '../users/users.service';
           );
         }
 
-        const product = await this.findCatalogProductByArticle(line.article);
+        const product = await this.findCatalogProductByArticle(line.article, legacyCity);
         if (!product) {
           throw new HttpException(
             { code: '6000', message: 'Артикул не найден' },
@@ -392,12 +405,14 @@ import { UsersService } from '../users/users.service';
         const orderRepo = manager.getRepository(Order);
         const orderItemRepo = manager.getRepository(OrderItem);
 
+        const orderCity = legacyCity?.trim().toLowerCase() || null;
         const order = await orderRepo.save(
           orderRepo.create({
             userId: user.id,
             reference,
             status: orderAggregateStatus,
             orderSource: 'API',
+            city: orderCity,
           }),
         );
 

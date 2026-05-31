@@ -32,6 +32,8 @@ async function bootstrap() {
           'http://autobody.ru',
           'https://ekb.autobody.ru',
           'https://www.ekb.autobody.ru',
+          'https://spb.autobody.ru',
+          'https://www.spb.autobody.ru',
         ],
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

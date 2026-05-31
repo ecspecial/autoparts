@@ -34,6 +34,10 @@ export class CartService {
     return cart;
   }
 
+  private siteCity(): string {
+    return (process.env.SITE_CITY ?? 'ekb').toLowerCase().trim();
+  }
+
   async getCartWithAvailability(userId: number) {
     const cart = await this.getOrCreateCart(userId);
 
@@ -41,7 +45,7 @@ export class CartService {
     const itemsWithAvailability = await Promise.all(
         cart.items.map(async (item) => {
           const currentProduct = await this.productRepository.findOne({
-            where: { article: item.article },
+            where: { article: item.article, city: this.siteCity() },
           });
       
           return {
@@ -81,7 +85,7 @@ export class CartService {
   
     // Check current product stock
     const currentProduct = await this.productRepository.findOne({
-      where: { article: dto.article },
+      where: { article: dto.article, city: this.siteCity() },
     });
   
     if (!currentProduct) {
@@ -139,13 +143,13 @@ export class CartService {
   
     // ✅ ADD STOCK VALIDATION
     const currentProduct = await this.productRepository.findOne({
-      where: { article: item.article },
+      where: { article: item.article, city: this.siteCity() },
     });
-    
+
     if (!currentProduct) {
       throw new NotFoundException('Товар не найден в каталоге');
     }
-    
+
     if (dto.quantity > currentProduct.quantity) {
       throw new BadRequestException(
         `Недостаточно товара на складе. Доступно: ${currentProduct.quantity} шт.`,

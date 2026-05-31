@@ -1,8 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, Brackets } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CrossCsvImportService } from '../cross-reference/services/cross-csv-import.service';
+
+/** Returns city tag from SITE_CITY env var, defaults to 'ekb'. */
+function siteCity(): string {
+  return (process.env.SITE_CITY ?? 'ekb').toLowerCase().trim();
+}
 
 @Injectable()
 export class ProductsService {
@@ -14,7 +19,7 @@ export class ProductsService {
 
   async findById(id: number): Promise<Product> {
     const product = await this.productRepository.findOne({
-      where: { id },
+      where: { id, city: siteCity() },
     });
 
     if (!product) {
@@ -30,23 +35,23 @@ export class ProductsService {
     limit: number = 20,
   ): Promise<{ products: Product[]; total: number; articlesFound: string[] }> {
     const articles = await this.crossCsvImportService.findArticlesByOem(oemInput);
-  
+
     if (articles.length === 0) {
       return { products: [], total: 0, articlesFound: [] };
     }
-  
+
     const [products, total] = await this.productRepository.findAndCount({
-      where: { article: In(articles) },
+      where: { article: In(articles), city: siteCity() },
       skip: (page - 1) * limit,
       take: limit,
     });
-  
+
     const foundArticles = products.map(p => p.article);
     const uniqueFoundArticles = [...new Set(foundArticles)];
-  
-    return { 
-      products, 
-      total, 
+
+    return {
+      products,
+      total,
       articlesFound: uniqueFoundArticles,
     };
   }
@@ -63,19 +68,20 @@ export class ProductsService {
     limit: number;
   }) {
     const query = this.productRepository.createQueryBuilder('product');
-  
+    query.where('product.city = :city', { city: siteCity() });
+
     if (filters.marka) {
       query.andWhere('product.marka = :marka', { marka: filters.marka });
     }
-  
+
     if (filters.model) {
       query.andWhere('product.model = :model', { model: filters.model });
     }
-  
+
     if (filters.generation) {
       query.andWhere('product.generation = :generation', { generation: filters.generation });
     }
-  
+
     if (filters.article) {
       const normalized = this.normalizeForSearch(filters.article);
       query.andWhere(
@@ -83,7 +89,7 @@ export class ProductsService {
         { article: `%${normalized}%` }
       );
     }
-  
+
     if (filters.nameKeyword) {
       query.andWhere(
         '(product.name ILIKE :keyword OR product.fullName ILIKE :keyword)',
@@ -94,14 +100,14 @@ export class ProductsService {
     if (filters.type) {
       query.andWhere('product.type = :type', { type: filters.type });
     }
-  
+
     const [items, total] = await query
       .skip((filters.page - 1) * filters.limit)
       .take(filters.limit)
       .orderBy('product.marka', 'ASC')
       .addOrderBy('product.model', 'ASC')
       .getManyAndCount();
-  
+
     return {
       items,
       total,
@@ -120,7 +126,8 @@ export class ProductsService {
     const query = this.productRepository
       .createQueryBuilder('product')
       .select('DISTINCT product.type', 'type')
-      .where('product.type IS NOT NULL')
+      .where('product.city = :city', { city: siteCity() })
+      .andWhere('product.type IS NOT NULL')
       .andWhere("product.type != ''");
 
     if (filters.marka) {
@@ -147,10 +154,12 @@ export class ProductsService {
    */
   async getNewArrivals(limit = 15): Promise<Product[]> {
     const take = Math.min(Math.max(limit, 1), 30);
+    const city = siteCity();
 
     const flagged = await this.productRepository
       .createQueryBuilder('p')
-      .where('p.quantity > 0')
+      .where('p.city = :city', { city })
+      .andWhere('p.quantity > 0')
       .andWhere('p.lab IS NOT NULL')
       .andWhere('LOWER(p.lab) LIKE :nov', { nov: '%новинк%' })
       .orderBy('p.createdAt', 'DESC')
@@ -163,7 +172,8 @@ export class ProductsService {
 
     const fallback = await this.productRepository
       .createQueryBuilder('p')
-      .where('p.quantity > 0')
+      .where('p.city = :city', { city })
+      .andWhere('p.quantity > 0')
       .orderBy('p.createdAt', 'DESC')
       .take(take)
       .getMany();
@@ -186,34 +196,42 @@ export class ProductsService {
     limit: number = 20,
   ): Promise<{ products: Product[]; total: number; articlesFound: string[] }> {
     const normalizedQuery = this.normalizeForSearch(query);
-  
+    const city = siteCity();
+
     const oemArticles = await this.crossCsvImportService.findArticlesByOem(query);
-  
+
     const qb = this.productRepository.createQueryBuilder('product');
-  
+    qb.where('product.city = :city', { city });
+
     if (oemArticles.length > 0) {
-      qb.where(
-        "UPPER(REGEXP_REPLACE(product.article, '[^A-ZА-Я0-9]', '', 'gi')) LIKE :article",
-        { article: `%${normalizedQuery}%` },
-      ).orWhere('product.article IN (:...oemArticles)', { oemArticles });
+      qb.andWhere(
+        new Brackets((qbInner) => {
+          qbInner
+            .where(
+              "UPPER(REGEXP_REPLACE(product.article, '[^A-ZА-Я0-9]', '', 'gi')) LIKE :article",
+              { article: `%${normalizedQuery}%` },
+            )
+            .orWhere('product.article IN (:...oemArticles)', { oemArticles });
+        }),
+      );
     } else {
-      qb.where(
+      qb.andWhere(
         "UPPER(REGEXP_REPLACE(product.article, '[^A-ZА-Я0-9]', '', 'gi')) LIKE :article",
         { article: `%${normalizedQuery}%` },
       );
     }
-  
+
     const [allProducts, total] = await qb
       .orderBy('product.marka', 'ASC')
       .addOrderBy('product.model', 'ASC')
       .getManyAndCount();
-  
+
     const paginated = allProducts.slice((page - 1) * limit, page * limit);
-  
+
     const foundOemArticles = oemArticles.length > 0
       ? [...new Set(allProducts.filter(p => oemArticles.includes(p.article)).map(p => p.article))]
       : [];
-  
+
     return { products: paginated, total, articlesFound: foundOemArticles };
   }
 

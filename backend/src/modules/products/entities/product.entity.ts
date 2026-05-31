@@ -1,12 +1,17 @@
-import { Entity, Column, PrimaryGeneratedColumn, UpdateDateColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, UpdateDateColumn, CreateDateColumn, Index } from 'typeorm';
 
 @Entity('products')
+@Index(['article', 'city'], { unique: true })
 export class Product {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true, length: 50 })
+  @Column({ length: 50 })
   article: string;
+
+  /** Город склада: 'ekb' | 'spb' */
+  @Column({ type: 'varchar', length: 20, default: 'ekb' })
+  city: string;
 
   /** Внутренний код из прайса (колонка artKod в CSV); для отображения и новинок */
   @Column({ type: 'varchar', length: 120, nullable: true })

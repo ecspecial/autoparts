@@ -60,6 +60,11 @@ export class DjangoBridgeCreateOrderDto {
   @Min(0)
   @Max(100)
   legacy_discount?: number;
+
+  /** Django `Users.sity` — город клиента (ekb | spb). Сохраняется в заказе. */
+  @IsOptional()
+  @IsString()
+  legacy_city?: string;
 }
 
 export class DjangoBridgeOrderDetailsDto {
@@ -77,4 +82,9 @@ export class DjangoBridgeOrderDetailsDto {
   @Type(() => Number)
   @IsInt()
   legacy_user_id?: number;
+
+  /** Django `Users.sity` — город клиента. Сохраняется в заказе. */
+  @IsOptional()
+  @IsString()
+  legacy_city?: string;
 }

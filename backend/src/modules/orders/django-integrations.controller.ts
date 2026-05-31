@@ -56,6 +56,7 @@ export class DjangoIntegrationsOrdersController {
       lines: body.order,
       legacyUserId: body.legacy_user_id,
       legacyDiscount: body.legacy_discount,
+      legacyCity: body.legacy_city,
     });
     return { code: '0', message: 'Ok', order_id: orderId };
   }

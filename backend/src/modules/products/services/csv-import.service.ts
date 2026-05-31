@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
-import csv from 'csv-parser';  // ← Default import, not namespace
+import csv from 'csv-parser';
 import { Product } from '../entities/product.entity';
 
 @Injectable()
@@ -16,71 +16,92 @@ export class CsvImportService {
     private configService: ConfigService,
   ) {}
 
-  async importFromCsv(): Promise<number> {
-    const csvPath = this.configService.get<string>('CSV_PATH');
-    
-    if (!csvPath) {  // ← Handle undefined
-      this.logger.error('CSV_PATH not configured in .env');
-      throw new Error('CSV_PATH not configured');
-    }
-    
-    if (!fs.existsSync(csvPath)) {
-      this.logger.error(`CSV file not found at ${csvPath}`);
-      throw new Error('CSV file not found');
+  /** Import CSV for a specific city. Env keys: CSV_PATH_EKB, CSV_PATH_SPB.
+   *  Falls back to legacy CSV_PATH when city='ekb' and CSV_PATH_EKB is absent. */
+  async importFromCsvForCity(city: string): Promise<number> {
+    const envKey = `CSV_PATH_${city.toUpperCase()}`;
+    let csvPath = this.configService.get<string>(envKey);
+
+    // backward-compat: legacy CSV_PATH used as ekb source
+    if (!csvPath && city === 'ekb') {
+      csvPath = this.configService.get<string>('CSV_PATH');
     }
 
-    this.logger.log(`Starting CSV import from ${csvPath}`);
+    if (!csvPath) {
+      this.logger.warn(`${envKey} not configured — skipping city "${city}"`);
+      return 0;
+    }
+
+    if (!fs.existsSync(csvPath)) {
+      this.logger.warn(`CSV file for city "${city}" not found at ${csvPath} — skipping`);
+      return 0;
+    }
+
+    this.logger.log(`Starting CSV import for city="${city}" from ${csvPath}`);
     const products: Partial<Product>[] = [];
 
     return new Promise((resolve, reject) => {
-      fs.createReadStream(csvPath, { encoding: 'utf8' })
-        .pipe(csv({  // ← Now works as default import
-          separator: ';',
-          headers: ['art', 'price', 'quantity', 'brand', 'full_name', 'marka', 'model', 'generation', 'ozon', 'wildberries', 'name', 'oem', 'type', 'artKod', 'lab'],          
-          skipLines: 1,
-        }))
+      fs.createReadStream(csvPath!, { encoding: 'utf8' })
+        .pipe(
+          csv({
+            separator: ';',
+            headers: [
+              'art', 'price', 'quantity', 'brand', 'full_name',
+              'marka', 'model', 'generation', 'ozon', 'wildberries',
+              'name', 'oem', 'type', 'artKod', 'lab',
+            ],
+            skipLines: 1,
+          }),
+        )
         .on('data', (row) => {
-            if (!row.art || !row.art.trim()) return;
-  
-            const quantity = parseInt(row.quantity || '0', 10);
-            if (quantity === 0) return;
-  
-            const artTrim = row.art.trim();
-            const artKodTrim = row.artKod?.trim();
-            products.push({
-              article: artTrim,
-              artKod: artKodTrim || null,
-              price: parseFloat(row.price?.replace(',', '.') || '0'),
-              quantity,
-              brand: row.brand?.trim() || '',
-              fullName: row.full_name?.trim() || '',
-              marka: row.marka?.trim() || '',
-              model: row.model?.trim() || '',
-              generation: row.generation?.trim() || '',
-              ozonUrl: row.ozon?.trim() || null,
-              wildberriesUrl: row.wildberries?.trim() || null,
-              name: row.name?.trim() || '',
-              oem: row.oem?.trim() || null,
-              type: row.type?.trim() || null,
-              lab: row.lab?.trim() || null,
-            });
-          })
+          if (!row.art || !row.art.trim()) return;
+
+          const quantity = parseInt(row.quantity || '0', 10);
+          if (quantity === 0) return;
+
+          const artTrim = row.art.trim();
+          const artKodTrim = row.artKod?.trim();
+          products.push({
+            article: artTrim,
+            city,
+            artKod: artKodTrim || null,
+            price: parseFloat(row.price?.replace(',', '.') || '0'),
+            quantity,
+            brand: row.brand?.trim() || '',
+            fullName: row.full_name?.trim() || '',
+            marka: row.marka?.trim() || '',
+            model: row.model?.trim() || '',
+            generation: row.generation?.trim() || '',
+            ozonUrl: row.ozon?.trim() || null,
+            wildberriesUrl: row.wildberries?.trim() || null,
+            name: row.name?.trim() || '',
+            oem: row.oem?.trim() || null,
+            type: row.type?.trim() || null,
+            lab: row.lab?.trim() || null,
+          });
+        })
         .on('end', async () => {
           try {
-            this.logger.log(`Parsed ${products.length} products from CSV`);
+            this.logger.log(`Parsed ${products.length} products for city="${city}"`);
 
-            await this.productRepository.clear();
-            
+            // Delete only this city's rows so other cities are unaffected
+            await this.productRepository
+              .createQueryBuilder()
+              .delete()
+              .from(Product)
+              .where('city = :city', { city })
+              .execute();
+
             const chunkSize = 500;
             for (let i = 0; i < products.length; i += chunkSize) {
               const chunk = products.slice(i, i + chunkSize);
               await this.productRepository.save(chunk);
             }
 
-            this.logger.log(`Successfully imported ${products.length} products`);
+            this.logger.log(`Imported ${products.length} products for city="${city}"`);
             resolve(products.length);
           } catch (error) {
-            this.logger.error('Failed to save products to database', error);
+            this.logger.error(`Failed to save products for city="${city}"`, error);
             reject(error);
           }
         })
@@ -89,5 +110,10 @@ export class CsvImportService {
           reject(error);
         });
     });
+  }
+
+  /** Legacy alias — keeps backward compatibility for code that calls importFromCsv(). */
+  async importFromCsv(): Promise<number> {
+    return this.importFromCsvForCity('ekb');
   }
 }
