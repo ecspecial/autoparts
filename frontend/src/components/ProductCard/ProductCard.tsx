@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { useCatalogPrice } from '../../hooks/useCatalogPrice';
+import ProductPrice from '../ProductPrice/ProductPrice';
 import Modal from '../Modal/Modal';
 import './ProductCard.css';
 
@@ -30,6 +32,7 @@ export default function ProductCard({
 }: ProductCardProps) {
   const { addToCart } = useCart();
   const { isAuthenticated } = useAuth();
+  const { displayPrice } = useCatalogPrice(price);
   const navigate = useNavigate();
   const [isAdding, setIsAdding] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -87,7 +90,7 @@ export default function ProductCard({
         fullName: name,
         marka: brand || '',
         model: model || '',
-        priceSnapshot: price,
+        priceSnapshot: displayPrice,
       });
 
       const elapsed = Date.now() - startTime;
@@ -150,7 +153,7 @@ export default function ProductCard({
             
             {!isInTransit && (
               <div className="product-card-footer">
-                <div className="product-price">{price.toLocaleString('ru-RU')} ₽</div>
+                <ProductPrice basePrice={price} />
                 <div className="product-stock in-stock">
                   В наличии: {quantity} шт.
                 </div>

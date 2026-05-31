@@ -284,44 +284,54 @@
     }
   }
   
-/* City switcher */
+/* City switcher — в стиле пунктов меню (синий active, без «таблеток») */
 .city-switcher {
   display: flex;
   align-items: center;
   gap: 0;
-  background: var(--background-alt, #f5f5f5);
-  border-radius: 20px;
-  padding: 2px;
-  margin-right: 0.5rem;
+  margin-right: 0.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--white);
 }
 
 .city-switcher-item {
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  padding: 0.3rem 0.75rem;
-  border-radius: 18px;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0;
   text-decoration: none;
-  color: var(--text-secondary, #666);
-  transition: background 0.18s, color 0.18s;
+  color: var(--text-primary);
+  transition: color 0.2s, background 0.2s;
   cursor: pointer;
   white-space: nowrap;
+  letter-spacing: -0.01em;
+  border: none;
+  background: transparent;
 }
 
-.city-switcher-item:hover {
-  color: var(--text-primary, #111);
+.city-switcher-item:not(.city-switcher-active) + .city-switcher-item,
+.city-switcher-item + .city-switcher-active,
+.city-switcher-active + .city-switcher-item {
+  box-shadow: inset 1px 0 0 var(--border-color);
+}
+
+a.city-switcher-item:hover {
+  color: var(--primary-blue);
+  background: #f8fafc;
 }
 
 .city-switcher-active {
-  background: var(--white, #fff);
-  color: var(--primary-color, #e63946);
-  font-weight: 600;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  color: var(--primary-blue);
+  background: #eff6ff;
   cursor: default;
 }
 
 .city-switcher-mobile {
-  margin: 0.75rem 1.5rem 0.5rem;
-  align-self: flex-start;
+  margin: 0 1.5rem 1rem;
+  align-self: stretch;
+  width: calc(100% - 3rem);
 }
 
 @media (max-width: 480px) {

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { useCatalogPrice } from '../../hooks/useCatalogPrice';
+import ProductPrice from '../../components/ProductPrice/ProductPrice';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { productsApi } from '../../api/products';
 import type { Product } from '../../api/products';
@@ -16,6 +18,9 @@ export default function ProductPage() {
   const { addToCart } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const catalogPrice = useCatalogPrice(
+    product ? parseFloat(product.price) : 0,
+  );
   const [addingToCart, setAddingToCart] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -87,7 +92,7 @@ export default function ProductPage() {
         fullName: product.fullName,
         marka: product.marka,
         model: product.model,
-        priceSnapshot: parseFloat(product.price),
+        priceSnapshot: catalogPrice.displayPrice,
       });
       
       // Ensure spinner shows for at least 500ms
@@ -139,7 +144,7 @@ export default function ProductPage() {
     );
   }
 
-  const price = parseFloat(product.price);
+  const basePrice = parseFloat(product.price);
   const inStock = product.quantity > 0;
 
   return (
@@ -231,7 +236,7 @@ export default function ProductPage() {
             <div className="product-price-block">
             <div className="price-info">
                 <div className="price-label">Цена</div>
-                <div className="price-value">{price.toLocaleString('ru-RU')} ₽</div>
+                <ProductPrice basePrice={basePrice} className="catalog-price--page" />
             </div>
             <div className={`availability-badge ${inStock ? 'in-stock' : 'out-of-stock'}`}>
                 <svg viewBox="0 0 24 24" fill="currentColor">
