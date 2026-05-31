@@ -328,40 +328,35 @@ a.city-switcher-item:hover {
   cursor: default;
 }
 
-.city-switcher-label--short {
-  display: none;
-}
-
+/* Mobile drawer: full city names, stacked vertically */
 .city-switcher-mobile {
   display: flex;
+  flex-direction: column;
   margin: 0 1rem 1rem;
   align-self: stretch;
   width: calc(100% - 2rem);
   max-width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
 .city-switcher-mobile .city-switcher-item {
-  flex: 1 1 0;
-  min-width: 0;
-  padding: 0.5rem 0.4rem;
-  font-size: 0.8125rem;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex: none;
+  width: 100%;
+  padding: 0.65rem 1rem;
+  font-size: 0.9375rem;
+  text-align: left;
+  white-space: normal;
+  line-height: 1.3;
+  box-sizing: border-box;
+}
+
+.city-switcher-mobile .city-switcher-item:not(.city-switcher-active) + .city-switcher-item,
+.city-switcher-mobile .city-switcher-item + .city-switcher-active,
+.city-switcher-mobile .city-switcher-active + .city-switcher-item {
+  box-shadow: inset 0 1px 0 var(--border-color);
 }
 
 @media (max-width: 1024px) {
-  .city-switcher-label--full {
-    display: none;
-  }
-
-  .city-switcher-label--short {
-    display: inline;
-  }
-
   .header-nav .city-switcher {
     display: none;
   }

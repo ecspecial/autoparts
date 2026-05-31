@@ -6,18 +6,9 @@ import { useCart } from '../../context/CartContext';
 import { detectSiteCity, getSiteLogoUrl } from '../../utils/siteLogo';
 
 const CITIES = [
-  { key: 'ekb', label: 'Екатеринбург', shortLabel: 'Екб', host: 'ekb.autobody.ru' },
-  { key: 'spb', label: 'Санкт-Петербург', shortLabel: 'СПб', host: 'spb.autobody.ru' },
+  { key: 'ekb', label: 'Екатеринбург', host: 'ekb.autobody.ru' },
+  { key: 'spb', label: 'Санкт-Петербург', host: 'spb.autobody.ru' },
 ] as const;
-
-function CityLabel({ full, short }: { full: string; short: string }) {
-  return (
-    <>
-      <span className="city-switcher-label city-switcher-label--full">{full}</span>
-      <span className="city-switcher-label city-switcher-label--short">{short}</span>
-    </>
-  );
-}
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -58,11 +49,11 @@ const Header = () => {
             {CITIES.map(c => (
               currentCity === c.key ? (
                 <span key={c.key} className="city-switcher-item city-switcher-active">
-                  <CityLabel full={c.label} short={c.shortLabel} />
+                  {c.label}
                 </span>
               ) : (
                 <a key={c.key} href={`https://${c.host}${location.pathname}${location.search}`} className="city-switcher-item">
-                  <CityLabel full={c.label} short={c.shortLabel} />
+                  {c.label}
                 </a>
               )
             ))}
@@ -142,7 +133,7 @@ const Header = () => {
           {CITIES.map(c => (
             currentCity === c.key ? (
               <span key={c.key} className="city-switcher-item city-switcher-active">
-                <CityLabel full={c.label} short={c.shortLabel} />
+                {c.label}
               </span>
             ) : (
               <a
@@ -151,7 +142,7 @@ const Header = () => {
                 className="city-switcher-item"
                 onClick={closeMobileMenu}
               >
-                <CityLabel full={c.label} short={c.shortLabel} />
+                {c.label}
               </a>
             )
           ))}
