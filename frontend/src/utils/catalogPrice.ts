@@ -6,7 +6,7 @@ export function applyUserDiscount(
   const base = Number(basePrice) || 0;
   const dis = Math.min(100, Math.max(0, Number(discountPercent) || 0));
   if (dis <= 0) return base;
-  return Math.round(base * (100 - dis) * 100) / 100;
+  return Math.round(base * (100 - dis) / 100);
 }
 
 export function formatRub(price: number): string {
