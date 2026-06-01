@@ -248,6 +248,18 @@
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.02em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+}
+
+.cart-item-price-base {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--text-secondary, #9ca3af);
+  text-decoration: line-through;
+  letter-spacing: 0;
 }
 
 .cart-item-remove {

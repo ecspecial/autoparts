@@ -76,7 +76,7 @@ export default function ProductPage() {
         fullName: product.fullName,
         marka: product.marka,
         model: product.model,
-        priceSnapshot: catalogPrice.displayPrice,
+        priceSnapshot: catalogPrice.basePrice,
       });
       
       // Ensure spinner shows for at least 500ms

@@ -32,7 +32,7 @@ export default function ProductCard({
 }: ProductCardProps) {
   const { addToCart } = useCart();
   const { isAuthenticated } = useAuth();
-  const { displayPrice } = useCatalogPrice(price);
+  const { displayPrice, basePrice } = useCatalogPrice(price);
   const navigate = useNavigate();
   const [isAdding, setIsAdding] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -90,7 +90,7 @@ export default function ProductCard({
         fullName: name,
         marka: brand || '',
         model: model || '',
-        priceSnapshot: displayPrice,
+        priceSnapshot: basePrice,
       });
 
       const elapsed = Date.now() - startTime;

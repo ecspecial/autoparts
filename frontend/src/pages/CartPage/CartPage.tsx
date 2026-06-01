@@ -3,12 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { ordersApi } from '../../api/orders';
+import { applyUserDiscount } from '../../utils/catalogPrice';
 import { PersonalDataConsentField } from '../../components/PersonalDataConsentField/PersonalDataConsentField';
 import './CartPage.css';
 
 const CartPage = () => {
   const { cart, isLoading, updateQuantity, removeItem, refreshCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const discountPercent = isAuthenticated && user && user.discount > 0 ? user.discount : 0;
+  const displayItemPrice = (basePrice: number) => applyUserDiscount(basePrice, discountPercent);
   const navigate = useNavigate();
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -87,7 +90,7 @@ const CartPage = () => {
 
   const selectedItems = cart.filter((item) => selectedIds.has(item.id));
   const selectedTotal = selectedItems.reduce(
-    (sum, item) => sum + item.priceSnapshot * item.quantity,
+    (sum, item) => sum + displayItemPrice(item.priceSnapshot) * item.quantity,
     0,
   );
   const selectedCount = selectedItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -229,7 +232,12 @@ const CartPage = () => {
                     </div>
 
                     <div className="cart-item-price">
-                      {(item.priceSnapshot * item.quantity).toLocaleString('ru-RU')} ₽
+                      {(displayItemPrice(item.priceSnapshot) * item.quantity).toLocaleString('ru-RU')} ₽
+                      {discountPercent > 0 && (
+                        <span className="cart-item-price-base">
+                          {(item.priceSnapshot * item.quantity).toLocaleString('ru-RU')} ₽
+                        </span>
+                      )}
                     </div>
 
                     <button
