@@ -11,6 +11,9 @@ export class DeliveryMethod {
   @Column({ length: 200 })
   name: string;
 
+  @Column({ length: 10, default: 'ekb' })
+  city: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

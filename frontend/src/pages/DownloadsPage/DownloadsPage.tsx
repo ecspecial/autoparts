@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { detectSiteCity } from '../../utils/siteLogo';
 import './DownloadsPage.css';
 
 interface DownloadFile {
@@ -10,6 +11,13 @@ interface DownloadFile {
 }
 
 export default function DownloadsPage() {
+  // Nginx maps /downloads/ → /var/images/autoparts/public-downloads/<city>/
+  // so URLs stay the same; the right subfolder is served per domain.
+  const city = detectSiteCity();
+  const xlsName = city === 'spb'
+    ? 'price_forward_spb_NDS'
+    : 'price_forward_ekat_NDS';
+
   const downloads: DownloadFile[] = [
     {
       name: 'Прайс-лист (CSV)',
@@ -28,14 +36,14 @@ export default function DownloadsPage() {
     {
       name: 'Прайс-лист (Excel)',
       description: 'Полный каталог товаров в формате Excel',
-      url: '/downloads/PriceXLS/price_forward_ekat_NDS.xls',
+      url: `/downloads/PriceXLS/${xlsName}.xls`,
       format: 'XLS',
       size: '~800 KB'
     },
     {
       name: 'Прайс-лист (Excel архив)',
       description: 'Полный каталог товаров в формате Excel (ZIP архив)',
-      url: '/downloads/PriceXLS/price_forward_ekat_NDS.zip',
+      url: `/downloads/PriceXLS/${xlsName}.zip`,
       format: 'ZIP',
       size: '~400 KB'
     }

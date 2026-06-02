@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { DeliveryMethod } from './entities/delivery-method.entity';
+import { CityContextService } from '../../common/city-context.service';
 import * as fs from 'fs';
 import csvParser from 'csv-parser';
 
@@ -14,36 +15,52 @@ export class DeliveryService {
     @InjectRepository(DeliveryMethod)
     private deliveryMethodRepository: Repository<DeliveryMethod>,
     private configService: ConfigService,
+    private cityContext: CityContextService,
   ) {}
 
+  private getCsvPath(city: string): string {
+    if (city === 'spb') {
+      return (
+        this.configService.get<string>('DELIVERY_CSV_PATH_SPB') ||
+        '/var/images/autoparts/delivery/spb/delivery.csv'
+      );
+    }
+    return (
+      this.configService.get<string>('DELIVERY_CSV_PATH_EKB') ||
+      this.configService.get<string>('DELIVERY_CSV_PATH') ||
+      '/var/images/autoparts/delivery/ekb/delivery.csv'
+    );
+  }
+
   async findAll(): Promise<DeliveryMethod[]> {
-    return this.deliveryMethodRepository.find({ order: { name: 'ASC' } });
+    const city = this.cityContext.getCity();
+    return this.deliveryMethodRepository.find({
+      where: { city },
+      order: { name: 'ASC' },
+    });
   }
 
   async importFromCsv(): Promise<{ imported: number }> {
-    const csvPath = this.configService.get<string>('DELIVERY_CSV_PATH')
-      || '/var/images/autoparts/delivery/delivery.csv';
+    const city = this.cityContext.getCity();
+    const csvPath = this.getCsvPath(city);
 
     if (!fs.existsSync(csvPath)) {
       this.logger.warn(`Delivery CSV not found at ${csvPath}, skipping`);
       return { imported: 0 };
     }
 
-    this.logger.log(`Starting delivery methods import from ${csvPath}`);
-    const records: Array<{ code1c: string; name: string }> = [];
+    this.logger.log(`Starting delivery methods import [${city}] from ${csvPath}`);
+    const records: Array<{ code1c: string; name: string; city: string }> = [];
 
     return new Promise((resolve, reject) => {
       fs.createReadStream(csvPath, { encoding: 'utf8' })
         .pipe(csvParser({ separator: ';', headers: false }))
         .on('data', (row) => {
           try {
-            // CSV format: ;CODE;NAME;
-            // csv-parser with headers:false gives us 0, 1, 2, 3
             const code1c = (row['1'] || '').trim();
             const name = (row['2'] || '').trim();
-
             if (code1c && name) {
-              records.push({ code1c, name });
+              records.push({ code1c, name, city });
             }
           } catch (error) {
             this.logger.warn('Error parsing delivery row:', error);
@@ -52,14 +69,14 @@ export class DeliveryService {
         .on('end', async () => {
           try {
             if (records.length === 0) {
-              this.logger.warn('No delivery methods found in CSV');
+              this.logger.warn(`No delivery methods found in CSV [${city}]`);
               resolve({ imported: 0 });
               return;
             }
-
-            await this.deliveryMethodRepository.clear();
+            // Delete only current city's rows, keep other city's rows intact
+            await this.deliveryMethodRepository.delete({ city });
             await this.deliveryMethodRepository.insert(records);
-            this.logger.log(`✅ Imported ${records.length} delivery methods`);
+            this.logger.log(`✅ Imported ${records.length} delivery methods [${city}]`);
             resolve({ imported: records.length });
           } catch (error) {
             this.logger.error('Failed to save delivery methods', error);

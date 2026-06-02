@@ -2,38 +2,63 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
+import { CityContextService } from '../../common/city-context.service';
 
 export interface NewsItem {
   filename: string;
-  title: string;       // derived from filename
-  date: string;        // derived from filename
-  html: string;        // raw HTML content
+  title: string;
+  date: string;
+  html: string;
+}
+
+interface CityCache {
+  items: NewsItem[];
+  lastLoaded: number;
 }
 
 @Injectable()
 export class NewsService {
   private readonly logger = new Logger(NewsService.name);
-  private cache: NewsItem[] = [];
-  private lastLoaded: number = 0;
-  private readonly TTL_MS = 30 * 60 * 1000; // 30 minutes
+  private readonly TTL_MS = 30 * 60 * 1000;
+  private readonly cache = new Map<string, CityCache>();
 
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    private cityContext: CityContextService,
+  ) {}
 
-  async getAll(): Promise<NewsItem[]> {
-    const now = Date.now();
-    if (this.cache.length === 0 || now - this.lastLoaded > this.TTL_MS) {
-      await this.reload();
+  private getNewsPath(city: string): string {
+    if (city === 'spb') {
+      return (
+        this.configService.get<string>('NEWS_PATH_SPB') ||
+        '/var/images/autoparts/news/spb'
+      );
     }
-    return this.cache;
+    return (
+      this.configService.get<string>('NEWS_PATH_EKB') ||
+      this.configService.get<string>('NEWS_PATH') ||
+      '/var/images/autoparts/news/ekb'
+    );
   }
 
-  async reload(): Promise<void> {
-    const newsPath = this.configService.get<string>('NEWS_PATH')
-      || '/var/images/autoparts/news';
+  async getAll(): Promise<NewsItem[]> {
+    const city = this.cityContext.getCity();
+    const now = Date.now();
+    const cached = this.cache.get(city);
+    if (cached && cached.items.length > 0 && now - cached.lastLoaded < this.TTL_MS) {
+      return cached.items;
+    }
+    await this.reload(city);
+    return this.cache.get(city)?.items ?? [];
+  }
+
+  async reload(city?: string): Promise<void> {
+    const c = city ?? this.cityContext.getCity();
+    const newsPath = this.getNewsPath(c);
 
     if (!fs.existsSync(newsPath)) {
       this.logger.warn(`News folder not found: ${newsPath}`);
-      this.cache = [];
+      this.cache.set(c, { items: [], lastLoaded: Date.now() });
       return;
     }
 
@@ -41,7 +66,7 @@ export class NewsService {
       const files = fs.readdirSync(newsPath)
         .filter(f => f.endsWith('.html'))
         .sort()
-        .reverse(); // newest first
+        .reverse();
 
       const items: NewsItem[] = [];
 
@@ -49,24 +74,20 @@ export class NewsService {
         try {
           const filePath = path.join(newsPath, filename);
           const html = fs.readFileSync(filePath, 'utf8');
-
-          // Extract date and title from filename: 2026-02-18-price-update.html
           const match = filename.match(/^(\d{4}-\d{2}-\d{2})-(.+)\.html$/);
           const date = match ? match[1] : '';
           const titleSlug = match ? match[2].replace(/-/g, ' ') : filename;
-
           items.push({ filename, date, title: titleSlug, html });
-        } catch (err) {
+        } catch {
           this.logger.warn(`Failed to read news file: ${filename}`);
         }
       }
 
-      this.cache = items;
-      this.lastLoaded = Date.now();
-      this.logger.log(`✅ News cache loaded: ${items.length} articles`);
+      this.cache.set(c, { items, lastLoaded: Date.now() });
+      this.logger.log(`✅ News [${c}] cache loaded: ${items.length} articles from ${newsPath}`);
     } catch (err) {
-      this.logger.error('Failed to load news', err);
-      this.cache = [];
+      this.logger.error(`Failed to load news [${c}]`, err);
+      this.cache.set(c, { items: [], lastLoaded: Date.now() });
     }
   }
 }

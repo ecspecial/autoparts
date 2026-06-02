@@ -1,13 +1,40 @@
+import { detectSiteCity } from '../../utils/siteLogo';
 import './AboutPage.css';
 
+const CITY_INFO = {
+  ekb: {
+    company: 'Форвард Екатеринбург',
+    warehouseDesc: 'На складе в Екатеринбурге площадью 4\u202f500\u00a0кв.\u00a0м в наличии более 10\u202f000 видов номенклатуры. Поставки осуществляются от ведущих производителей Китая, Тайваня, Турции, Аргентины.',
+    deliveryText: 'Самовывоз, доставка по г.\u00a0Екатеринбург\u00a0— бесплатно. Доставка до транспортной компании\u00a0— бесплатно (доставку можно согласовать с нашими Менеджерами после оформления заказа).',
+    phone: '+7 908 916 31 35',
+    phoneHref: 'tel:+79089163135',
+    email: 'ekat@autobody.ru',
+    emailFeedback: 'ekb.autobody2@gmail.com',
+    address: null as string | null,
+  },
+  spb: {
+    company: 'Форвард Санкт-Петербург',
+    warehouseDesc: 'На складе в Санкт-Петербурге в наличии широкая номенклатура кузовных деталей. Поставки осуществляются от ведущих производителей Китая, Тайваня, Турции, Аргентины.',
+    deliveryText: 'Самовывоз, доставка по г.\u00a0Санкт-Петербург\u00a0— бесплатно. Доставка до транспортной компании\u00a0— бесплатно (доставку можно согласовать с нашими Менеджерами после оформления заказа).',
+    phone: '+7 (812) 922-79-79',
+    phoneHref: 'tel:+78129227979',
+    email: 'spb@autobody.ru',
+    emailFeedback: null as string | null,
+    address: 'г.\u00a0Санкт-Петербург, ул.\u00a0Смоляная\u00a013к1',
+  },
+} as const;
+
 const AboutPage = () => {
+  const city = detectSiteCity();
+  const info = CITY_INFO[city];
+
   return (
     <div className="about-page">
       <div className="about-container">
         <div className="about-hero">
           <h1 className="about-title">О компании</h1>
           <p className="about-lead">
-            Компания «Форвард Екатеринбург» специализируется в области поставок и дистрибъюции запчастей.
+            Компания «{info.company}» специализируется в области поставок и дистрибъюции запчастей.
           </p>
         </div>
 
@@ -66,9 +93,12 @@ const AboutPage = () => {
               </svg>
             </div>
             <h2 className="section-title">Склад и поставки</h2>
-            <p className="section-text">
-              На складе в Екатеринбурге площадью 4 500 кв. в наличии более 10 000 видов номенклатуры. Поставки осуществляются от ведущих производителей Китая, Тайваня, Турции, Аргентины.
-            </p>
+            <p className="section-text">{info.warehouseDesc}</p>
+            {info.address && (
+              <p className="section-text about-address">
+                <strong>Адрес склада:</strong> {info.address}
+              </p>
+            )}
           </section>
 
           {/* Terms grid */}
@@ -87,7 +117,7 @@ const AboutPage = () => {
             </div>
             <div className="about-term-card">
               <h3 className="about-term-title">Тип доставки</h3>
-              <p className="about-term-text">Самовывоз, доставка по г. Екатеринбург – бесплатно. Доставка до транспортной компании – бесплатно (доставку можно согласовать с нашими Менеджерами после оформления заказа).</p>
+              <p className="about-term-text">{info.deliveryText}</p>
             </div>
           </div>
 
@@ -109,16 +139,24 @@ const AboutPage = () => {
             <div className="about-contacts-block">
               <div className="about-contact-item">
                 <span className="about-contact-label">Тел для заказов и всех вопросов:</span>
-                <a href="tel:+79089163135" className="about-contact-value">+7 908 916 31 35</a>
+                <a href={info.phoneHref} className="about-contact-value">{info.phone}</a>
               </div>
               <div className="about-contact-item">
                 <span className="about-contact-label">E-mail для заказов:</span>
-                <a href="mailto:ekat@autobody.ru" className="about-contact-value">ekat@autobody.ru</a>
+                <a href={`mailto:${info.email}`} className="about-contact-value">{info.email}</a>
               </div>
-              <div className="about-contact-item">
-                <span className="about-contact-label">E-mail для обратной связи и сотрудничества:</span>
-                <a href="mailto:ekb.autobody2@gmail.com" className="about-contact-value">ekb.autobody2@gmail.com</a>
-              </div>
+              {info.emailFeedback && (
+                <div className="about-contact-item">
+                  <span className="about-contact-label">E-mail для обратной связи и сотрудничества:</span>
+                  <a href={`mailto:${info.emailFeedback}`} className="about-contact-value">{info.emailFeedback}</a>
+                </div>
+              )}
+              {info.address && (
+                <div className="about-contact-item">
+                  <span className="about-contact-label">Адрес склада:</span>
+                  <span className="about-contact-value">{info.address}</span>
+                </div>
+              )}
             </div>
           </section>
         </div>

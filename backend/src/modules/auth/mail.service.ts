@@ -1,13 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import { CityContextService } from '../../common/city-context.service';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
   private transporter: nodemailer.Transporter | null = null;
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly cityContext: CityContextService,
+  ) {}
 
   private getTransporter(): nodemailer.Transporter | null {
     if (this.transporter) return this.transporter;
@@ -88,7 +92,12 @@ export class MailService {
 
   /** Уведомления менеджерам (не бросает ошибку наружу) */
   private async sendToManager(subject: string, html: string, text: string): Promise<void> {
-    const to = this.config.get<string>('MANAGER_NOTIFY_EMAIL')?.trim();
+    const city = this.cityContext.getCity();
+    const to = (
+      city === 'spb'
+        ? this.config.get<string>('MANAGER_NOTIFY_EMAIL_SPB')
+        : this.config.get<string>('MANAGER_NOTIFY_EMAIL')
+    )?.trim();
     if (!to) {
       this.logger.debug('MANAGER_NOTIFY_EMAIL не задан — уведомление пропущено');
       return;
