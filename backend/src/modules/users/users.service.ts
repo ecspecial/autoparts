@@ -3,28 +3,55 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, Not, QueryFailedError } from 'typeorm';
 import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
+import { CityContextService } from '../../common/city-context.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private cityContext: CityContextService,
   ) {}
 
-  /** Регистрация: email считается уникальным (без учёта регистра и краёв пробелов) */
-  async findByEmailNormalized(email: string): Promise<User | null> {
+  /** Email уникален в рамках города (ekb | spb). */
+  async findByEmailForCity(email: string, city: string): Promise<User | null> {
     const normalized = email.toLowerCase().trim();
     if (!normalized) return null;
     return this.usersRepository
       .createQueryBuilder('user')
       .where('LOWER(TRIM(user.email)) = :email', { email: normalized })
+      .andWhere('user.city = :city', { city })
       .getOne();
+  }
+
+  /** Аккаунт с тем же email на другом сайте (для сообщения при входе). */
+  async findByEmailInOtherCity(email: string, city: string): Promise<User | null> {
+    const normalized = email.toLowerCase().trim();
+    if (!normalized) return null;
+    return this.usersRepository
+      .createQueryBuilder('user')
+      .where('LOWER(TRIM(user.email)) = :email', { email: normalized })
+      .andWhere('user.city IS NOT NULL')
+      .andWhere('user.city != :city', { city })
+      .getOne();
+  }
+
+  assertUserMatchesRequestCity(user: User): void {
+    const requestCity = this.cityContext.getCity();
+    if (user.city && user.city !== requestCity) {
+      const siteName = user.city === 'spb' ? 'Санкт-Петербург' : 'Екатеринбург';
+      const host = user.city === 'spb' ? 'spb.autobody.ru' : 'ekb.autobody.ru';
+      throw new UnauthorizedException(
+        `Этот аккаунт зарегистрирован на сайте ${siteName} (${host}). Войдите там или зарегистрируйтесь на этом сайте.`,
+      );
+    }
   }
 
   async create(data: {
@@ -45,6 +72,7 @@ export class UsersService {
       balance: 0,
       isActive: false,
       clientNumber1c: null,
+      city: this.cityContext.getCity(),
       personalDataProcessingConsentAt: new Date(),
     });
     return this.usersRepository.save(user);
@@ -296,6 +324,7 @@ export class UsersService {
       clientNumber1c: null,
       partnerLegacyLogin: login,
       djangoLegacyUserId: djangoId,
+      city: this.cityContext.getCity(),
       personalDataProcessingConsentAt: null,
       preferredDelivery: null,
       deliveryAddress: null,

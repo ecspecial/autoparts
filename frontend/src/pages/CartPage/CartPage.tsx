@@ -7,6 +7,13 @@ import { applyUserDiscount } from '../../utils/catalogPrice';
 import { PersonalDataConsentField } from '../../components/PersonalDataConsentField/PersonalDataConsentField';
 import './CartPage.css';
 
+const isItemOrderable = (item: {
+  available: boolean;
+  currentStock: number;
+  quantity: number;
+}) =>
+  item.available && item.currentStock > 0 && item.quantity <= item.currentStock;
+
 const CartPage = () => {
   const { cart, isLoading, updateQuantity, removeItem, refreshCart } = useCart();
   const { isAuthenticated, user } = useAuth();
@@ -22,12 +29,12 @@ const CartPage = () => {
   // Sync selection when cart changes (auto-select newly added items)
   useEffect(() => {
     setSelectedIds((prev) => {
-      const cartIdSet = new Set(cart.map((i) => i.id));
       const next = new Set<number>();
-      // keep existing selections that are still in cart
-      prev.forEach((id) => { if (cartIdSet.has(id)) next.add(id); });
-      // auto-select any item not previously seen
-      cart.forEach((item) => { if (!prev.has(item.id) || next.size === 0) next.add(item.id); });
+      cart.forEach((item) => {
+        if (isItemOrderable(item) && (prev.has(item.id) || next.size === 0)) {
+          next.add(item.id);
+        }
+      });
       return next;
     });
   }, [cart]);
@@ -69,7 +76,10 @@ const CartPage = () => {
     );
   }
 
-  const allSelected = cart.length > 0 && selectedIds.size === cart.length;
+  const orderableItems = cart.filter(isItemOrderable);
+  const allSelected =
+    orderableItems.length > 0 &&
+    orderableItems.every((item) => selectedIds.has(item.id));
 
   const handleToggleSelect = (id: number) => {
     setSelectedIds((prev) => {
@@ -84,11 +94,12 @@ const CartPage = () => {
     if (allSelected) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(cart.map((i) => i.id)));
+      setSelectedIds(new Set(orderableItems.map((i) => i.id)));
     }
   };
 
   const selectedItems = cart.filter((item) => selectedIds.has(item.id));
+  const hasInvalidSelection = selectedItems.some((item) => !isItemOrderable(item));
   const selectedTotal = selectedItems.reduce(
     (sum, item) => sum + displayItemPrice(item.priceSnapshot) * item.quantity,
     0,
@@ -103,6 +114,14 @@ const CartPage = () => {
     if (selectedIds.size === 0) return;
     if (!checkoutPdConsent) {
       setCheckoutError('Необходимо согласие на обработку персональных данных');
+      return;
+    }
+
+    const invalid = selectedItems.filter((item) => !isItemOrderable(item));
+    if (invalid.length > 0) {
+      setCheckoutError(
+        'Снимите с оформления недоступные позиции (сняты с продажи или нет в наличии)',
+      );
       return;
     }
 
@@ -156,6 +175,7 @@ const CartPage = () => {
                     <input
                       type="checkbox"
                       checked={selectedIds.has(item.id)}
+                      disabled={!isItemOrderable(item)}
                       onChange={() => handleToggleSelect(item.id)}
                     />
                   </div>
@@ -304,6 +324,7 @@ const CartPage = () => {
                 onClick={handleCheckout}
                 disabled={
                   selectedIds.size === 0 ||
+                  hasInvalidSelection ||
                   isCheckingOut ||
                   (isAuthenticated && !checkoutPdConsent)
                 }

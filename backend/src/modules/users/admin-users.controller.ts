@@ -46,6 +46,7 @@ import { SetUserApiKeyBy1cDto } from './dto/set-user-api-key-by-1c.dto';
         balance: Number(u.balance),
         isActive: u.isActive,
         clientNumber1c: u.clientNumber1c,
+        city: u.city,
         createdAt: u.createdAt,
       }));
     }
@@ -67,6 +68,7 @@ import { SetUserApiKeyBy1cDto } from './dto/set-user-api-key-by-1c.dto';
         hasApiKey: !!u.apiKey,
         isActive: u.isActive,
         clientNumber1c: u.clientNumber1c,
+        city: u.city,
         createdAt: u.createdAt,
       }));
     }

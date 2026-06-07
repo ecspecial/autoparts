@@ -3,6 +3,7 @@ import {
     Logger,
     NotFoundException,
     ForbiddenException,
+    BadRequestException,
     HttpException,
     HttpStatus,
   } from '@nestjs/common';
@@ -61,7 +62,8 @@ import { CityContextService } from '../../common/city-context.service';
           'Оформление заказов доступно только после активации аккаунта',
         );
       }
-  
+      this.usersService.assertUserMatchesRequestCity(user);
+
       const cart = await this.cartRepo.findOne({ where: { userId } });
       if (!cart) throw new NotFoundException('Корзина не найдена');
   
@@ -73,6 +75,23 @@ import { CityContextService } from '../../common/city-context.service';
   
       if (items.length === 0) {
         throw new NotFoundException('Выбранные позиции не найдены в корзине');
+      }
+
+      const city = this.cityContext.getCity();
+      for (const ci of items) {
+        const product = await this.productsRepo.findOne({
+          where: { article: ci.article, city },
+        });
+        if (!product) {
+          throw new BadRequestException(
+            `Товар «${ci.name || ci.article}» недоступен на этом сайте и не может быть оформлен`,
+          );
+        }
+        if (product.quantity < ci.quantity) {
+          throw new BadRequestException(
+            `Недостаточно товара «${ci.name || ci.article}» на складе. Доступно: ${product.quantity} шт.`,
+          );
+        }
       }
   
       const reference = await this.generateReference();
@@ -132,7 +151,7 @@ import { CityContextService } from '../../common/city-context.service';
   
     async getUserOrders(userId: number): Promise<Order[]> {
       return this.ordersRepo.find({
-        where: { userId },
+        where: { userId, city: this.cityContext.getCity() },
         relations: ['items'],
         order: { createdAt: 'DESC' },
       });
@@ -243,6 +262,7 @@ import { CityContextService } from '../../common/city-context.service';
           full_name: order.user.fullName || null,
           phone: order.user.phone || null,
           order_source: order.orderSource || null,
+          city: order.city || null,
           delivery_method: order.user.preferredDelivery,
           delivery_address: order.user.deliveryAddress || null,
           order_reference: order.reference,

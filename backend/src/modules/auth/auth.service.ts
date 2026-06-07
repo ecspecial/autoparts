@@ -12,6 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
+import { CityContextService } from '../../common/city-context.service';
 import { CaptchaService } from './captcha.service';
 import { MailService } from './mail.service';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
@@ -25,6 +26,7 @@ export class AuthService {
 
   constructor(
     private usersService: UsersService,
+    private cityContext: CityContextService,
     private jwtService: JwtService,
     private captchaService: CaptchaService,
     private configService: ConfigService,
@@ -50,10 +52,11 @@ export class AuthService {
     }
 
     const normalizedEmail = dto.email.toLowerCase().trim();
+    const city = this.cityContext.getCity();
 
-    const existingByEmail = await this.usersService.findByEmailNormalized(normalizedEmail);
+    const existingByEmail = await this.usersService.findByEmailForCity(normalizedEmail, city);
     if (existingByEmail) {
-      throw new ConflictException('Пользователь с таким email уже зарегистрирован');
+      throw new ConflictException('Пользователь с таким email уже зарегистрирован на этом сайте');
     }
 
     // 3. Hash password
@@ -103,9 +106,18 @@ export class AuthService {
 
   async login(email: string, password: string) {
     const normalizedEmail = email.toLowerCase().trim();
+    const city = this.cityContext.getCity();
 
-    const user = await this.usersService.findByEmailNormalized(normalizedEmail);
+    const user = await this.usersService.findByEmailForCity(normalizedEmail, city);
     if (!user) {
+      const otherCity = await this.usersService.findByEmailInOtherCity(normalizedEmail, city);
+      if (otherCity) {
+        const siteName = otherCity.city === 'spb' ? 'Санкт-Петербург' : 'Екатеринбург';
+        const host = otherCity.city === 'spb' ? 'spb.autobody.ru' : 'ekb.autobody.ru';
+        throw new UnauthorizedException(
+          `Аккаунт зарегистрирован на сайте ${siteName} (${host}). Войдите там или зарегистрируйтесь на этом сайте.`,
+        );
+      }
       throw new UnauthorizedException('Неверный email или пароль');
     }
 
@@ -152,7 +164,8 @@ export class AuthService {
     }
 
     const normalizedEmail = dto.email.toLowerCase().trim();
-    const user = await this.usersService.findByEmailNormalized(normalizedEmail);
+    const city = this.cityContext.getCity();
+    const user = await this.usersService.findByEmailForCity(normalizedEmail, city);
     if (!user) {
       return { message: AuthService.FORGOT_PASSWORD_MESSAGE };
     }

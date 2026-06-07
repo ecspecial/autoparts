@@ -1,6 +1,9 @@
+import { getSiteContacts } from '../../utils/siteContacts';
 import './ContactsPage.css';
 
 const ContactsPage = () => {
+  const contacts = getSiteContacts();
+
   return (
     <div className="contacts-page">
       <div className="contacts-container">
@@ -25,7 +28,7 @@ const ContactsPage = () => {
               <div>
                 <h3 className="contact-row-label">Телефон</h3>
                 <p className="contact-row-value">
-                  <a href="tel:+79089163135">8 (908) 916-31-35</a>
+                  <a href={contacts.phoneHref}>{contacts.phone}</a>
                 </p>
               </div>
             </div>
@@ -40,30 +43,36 @@ const ContactsPage = () => {
               <div>
                 <h3 className="contact-row-label">Email</h3>
                 <p className="contact-row-value">
-                  <a href="mailto:ekat@autobody.ru">ekat@autobody.ru</a>
+                  <a href={`mailto:${contacts.email}`}>{contacts.email}</a>
                 </p>
-                <p className="contact-row-sub">Отдел по работе с клиентами:</p>
-                <p className="contact-row-value">
-                  <a href="mailto:d.pankratov@autobody.ru">d.pankratov@autobody.ru</a>
-                </p>
+                {contacts.emailClients && (
+                  <>
+                    <p className="contact-row-sub">Отдел по работе с клиентами:</p>
+                    <p className="contact-row-value">
+                      <a href={`mailto:${contacts.emailClients}`}>{contacts.emailClients}</a>
+                    </p>
+                  </>
+                )}
               </div>
             </div>
 
-            <div className="contact-row">
-              <div className="contact-row-icon contact-icon-telegram">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
-                </svg>
+            {contacts.telegram && contacts.telegramHref && (
+              <div className="contact-row">
+                <div className="contact-row-icon contact-icon-telegram">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="contact-row-label">Telegram</h3>
+                  <p className="contact-row-value">
+                    <a href={contacts.telegramHref} target="_blank" rel="noopener noreferrer">
+                      {contacts.telegram}
+                    </a>
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="contact-row-label">Telegram</h3>
-                <p className="contact-row-value">
-                  <a href="https://t.me/ekb_autobody" target="_blank" rel="noopener noreferrer">
-                    @ekb_autobody
-                  </a>
-                </p>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Right box — Location & Hours */}
@@ -79,17 +88,19 @@ const ContactsPage = () => {
               </div>
               <div>
                 <h3 className="contact-row-label">Адрес</h3>
-                <p className="contact-row-value">г. Екатеринбург, ул. Бархотская 2/2</p>
-                <div className="contacts-yandex-route contacts-yandex-route--mobile-only">
-                  <a
-                    href="https://yandex.ru/maps/?rtext=~56.860575,60.666519"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="contacts-yandex-route-btn"
-                  >
-                    Проложить маршрут на карте
-                  </a>
-                </div>
+                <p className="contact-row-value">{contacts.address}</p>
+                {contacts.yandexRouteHref && (
+                  <div className="contacts-yandex-route contacts-yandex-route--mobile-only">
+                    <a
+                      href={contacts.yandexRouteHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="contacts-yandex-route-btn"
+                    >
+                      Проложить маршрут на карте
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -102,9 +113,9 @@ const ContactsPage = () => {
               </div>
               <div>
                 <h3 className="contact-row-label">Время работы</h3>
-                <p className="contact-row-value">Пн–Пт: 09:00 – 18:00</p>
-                <p className="contact-row-value">Сб: выходной</p>
-                <p className="contact-row-value">Вс: выходной</p>
+                <p className="contact-row-value">{contacts.hoursWeekdays}</p>
+                <p className="contact-row-value">{contacts.hoursSaturday}</p>
+                <p className="contact-row-value">{contacts.hoursSunday}</p>
               </div>
             </div>
           </div>

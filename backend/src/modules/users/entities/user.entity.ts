@@ -22,7 +22,8 @@ import {
     @Column({ length: 20, default: '' })
     phone: string;
   
-    @Column({ type: 'varchar', length: 200, nullable: true, unique: true })
+    /** Уникальность email — в паре с city (см. idx_users_email_city). */
+    @Column({ type: 'varchar', length: 200, nullable: true })
     email: string | null = null;
   
     @Column({ name: 'entity_type', length: 20, default: 'individual' })
@@ -36,6 +37,10 @@ import {
   
     @Column({ name: 'is_active', default: false })
     isActive: boolean;
+
+    /** Город регистрации: ekb | spb (из Host при sign-up). */
+    @Column({ type: 'varchar', length: 10, nullable: true })
+    city: string | null = null;
   
     @Column({ type: 'varchar', name: 'preferred_delivery', length: 200, nullable: true })
     preferredDelivery: string | null;
