@@ -23,6 +23,15 @@
     gap: 0.75rem;
     z-index: 97;
     transition: opacity 0.2s;
+    flex-shrink: 0;
+    margin-right: 0.5rem;
+  }
+
+  .header-logo-img {
+    height: 68px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
   }
     
   .header-logo-svg {
@@ -386,7 +395,7 @@ a.city-switcher-item:hover {
     }
     
     .header-logo-img {
-        height: 36px;
+        height: 32px;
         width: auto;
         object-fit: contain;
       }
