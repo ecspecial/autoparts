@@ -33,7 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const storedToken = localStorage.getItem('access_token');
-    
+
     if (storedUser && storedToken) {
       try {
         setUser(JSON.parse(storedUser));
@@ -44,6 +44,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     setIsLoading(false);
+  }, []);
+
+  // Подтянуть скидку и профиль с сервера (актуально после смены скидки в 1С / админке).
+  useEffect(() => {
+    if (!localStorage.getItem('access_token')) return;
+
+    authApi
+      .getProfile()
+      .then((profile) => {
+        const updatedUser: User = {
+          id: profile.id,
+          discount: Number(profile.discount) || 0,
+          balance: profile.balance,
+          isActive: profile.isActive,
+          entityType: profile.entityType,
+          fullName: profile.fullName,
+          phone: profile.phone,
+          email: profile.email,
+          createdAt: profile.createdAt,
+        };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        setUser(updatedUser);
+      })
+      .catch((error) => {
+        const status = (error as { response?: { status?: number } })?.response?.status;
+        if (status === 401) {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('user');
+          setUser(null);
+        }
+      });
   }, []);
 
   const handleAuthResponse = (response: AuthResponse) => {
@@ -77,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profile = await authApi.getProfile();
       const updatedUser: User = {
         id: profile.id,
-        discount: profile.discount,
+        discount: Number(profile.discount) || 0,
         balance: profile.balance,
         isActive: profile.isActive,
         entityType: profile.entityType,

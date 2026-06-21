@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  // Относительный URL: spb.autobody.ru/api и ekb.autobody.ru/api — Host совпадает с сайтом (важно для city и JWT).
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -33,10 +34,11 @@ apiClient.interceptors.response.use(
       error.config?.url?.includes('/auth/reset-password');
     
     if (error.response?.status === 401 && !isAuthEndpoint) {
-      // Token expired or invalid - clear it and redirect
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

@@ -5,7 +5,9 @@ export function useCatalogPrice(basePrice: number) {
   const { isAuthenticated, user } = useAuth();
   const base = Number(basePrice) || 0;
   const discountPercent =
-    isAuthenticated && user && user.discount > 0 ? user.discount : 0;
+    isAuthenticated && user
+      ? Math.min(100, Math.max(0, Number(user.discount) || 0))
+      : 0;
   const displayPrice = applyUserDiscount(base, discountPercent);
 
   return {
