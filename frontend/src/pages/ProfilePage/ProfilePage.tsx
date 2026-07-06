@@ -130,6 +130,17 @@ const ProfilePage = () => {
       }
       const consentPayload = Boolean(hasStoredPdConsent || deliveryPdConsent);
 
+      if (!selectedDelivery) {
+        setSaveMessage('Выберите способ доставки');
+        setSaving(false);
+        return;
+      }
+      if (deliveryMethods.length === 0) {
+        setSaveMessage('Список способов доставки пуст — обратитесь к менеджеру');
+        setSaving(false);
+        return;
+      }
+
       const deliveryMethod = deliveryMethods.find((m) => m.code1c === selectedDelivery);
       await authApi.updateDelivery(
         selectedDelivery,
@@ -312,6 +323,11 @@ const ProfilePage = () => {
                             <option key={m.id} value={m.code1c}>{m.name}</option>
                           ))}
                         </select>
+                        {deliveryMethods.length === 0 && (
+                          <p className="profile-save-message error">
+                            Способы доставки не загружены. Попробуйте позже или свяжитесь с менеджером.
+                          </p>
+                        )}
                       </div>
                       {selectedDelivery &&
                         !deliveryMethods.find((m) => m.code1c === selectedDelivery)?.name.includes('САМОВЫВОЗ') && (

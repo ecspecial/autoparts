@@ -40,12 +40,19 @@ export class DeliveryService {
     });
   }
 
-  async importFromCsv(): Promise<{ imported: number }> {
-    const city = this.cityContext.getCity();
+  async importFromCsvForCity(city: string): Promise<{ imported: number }> {
     const csvPath = this.getCsvPath(city);
 
     if (!fs.existsSync(csvPath)) {
-      this.logger.warn(`Delivery CSV not found at ${csvPath}, skipping`);
+      this.logger.warn(`Delivery CSV not found at ${csvPath} [${city}], skipping`);
+      return { imported: 0 };
+    }
+
+    const fileSize = fs.statSync(csvPath).size;
+    if (fileSize < 16) {
+      this.logger.error(
+        `Delivery CSV for city="${city}" too small (${fileSize} bytes) at ${csvPath} — import skipped`,
+      );
       return { imported: 0 };
     }
 
@@ -69,24 +76,30 @@ export class DeliveryService {
         .on('end', async () => {
           try {
             if (records.length === 0) {
-              this.logger.warn(`No delivery methods found in CSV [${city}]`);
+              this.logger.warn(
+                `No delivery methods in CSV [${city}] — existing data kept`,
+              );
               resolve({ imported: 0 });
               return;
             }
-            // Delete only current city's rows, keep other city's rows intact
             await this.deliveryMethodRepository.delete({ city });
             await this.deliveryMethodRepository.insert(records);
             this.logger.log(`✅ Imported ${records.length} delivery methods [${city}]`);
             resolve({ imported: records.length });
           } catch (error) {
-            this.logger.error('Failed to save delivery methods', error);
+            this.logger.error(`Failed to save delivery methods [${city}]`, error);
             reject(error);
           }
         })
         .on('error', (error) => {
-          this.logger.error('Error reading delivery CSV', error);
+          this.logger.error(`Error reading delivery CSV [${city}]`, error);
           reject(error);
         });
     });
+  }
+
+  async importFromCsv(): Promise<{ imported: number }> {
+    const city = this.cityContext.getCity();
+    return this.importFromCsvForCity(city);
   }
 }

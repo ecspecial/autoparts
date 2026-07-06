@@ -57,12 +57,14 @@ export class ProductsSyncService implements OnModuleInit {
       this.logger.error('❌ Failed to sync cross-reference', error);
     }
 
-    // 3. Delivery methods
-    try {
-      const deliveryResult = await this.deliveryService.importFromCsv();
-      this.logger.log(`✅ Delivery sync: ${deliveryResult.imported} methods`);
-    } catch (error) {
-      this.logger.error('❌ Failed to sync delivery methods', error);
+    // 3. Delivery methods — per city (ekb + spb)
+    for (const city of CITIES) {
+      try {
+        const deliveryResult = await this.deliveryService.importFromCsvForCity(city);
+        this.logger.log(`✅ Delivery sync (${city}): ${deliveryResult.imported} methods`);
+      } catch (error) {
+        this.logger.error(`❌ Failed to sync delivery methods for city="${city}"`, error);
+      }
     }
 
     // 4. News

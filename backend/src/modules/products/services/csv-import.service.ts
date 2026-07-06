@@ -37,6 +37,14 @@ export class CsvImportService {
       return 0;
     }
 
+    const fileSize = fs.statSync(csvPath).size;
+    if (fileSize < 1024) {
+      this.logger.error(
+        `CSV for city="${city}" too small (${fileSize} bytes) at ${csvPath} — import skipped, existing data kept`,
+      );
+      return 0;
+    }
+
     this.logger.log(`Starting CSV import for city="${city}" from ${csvPath}`);
     const products: Partial<Product>[] = [];
 
@@ -83,6 +91,14 @@ export class CsvImportService {
         .on('end', async () => {
           try {
             this.logger.log(`Parsed ${products.length} products for city="${city}"`);
+
+            if (products.length === 0) {
+              this.logger.error(
+                `Import for city="${city}" skipped: 0 products in CSV — existing data kept`,
+              );
+              resolve(0);
+              return;
+            }
 
             // Delete only this city's rows so other cities are unaffected
             await this.productRepository
